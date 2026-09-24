@@ -1,0 +1,29 @@
+name: Docs
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Generate docs
+        env:
+          CHECKPOINT_DISABLE: "1"
+        run: make docs
+      - name: Fail if docs are out of date
+        run: git diff --exit-code -- docs/

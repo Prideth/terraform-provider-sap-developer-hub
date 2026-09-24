@@ -1,0 +1,32 @@
+name: Acceptance Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: github.repository == 'Prideth/terraform-provider-sap-developer-hub'
+    runs-on: ubuntu-latest
+    env:
+      TF_ACC: "1"
+      SAP_DEVELOPER_HUB_URL: ${{ secrets.SAP_DEVELOPER_HUB_URL }}
+      SAP_DEVELOPER_HUB_TOKEN_URL: ${{ secrets.SAP_DEVELOPER_HUB_TOKEN_URL }}
+      SAP_DEVELOPER_HUB_CLIENT_ID: ${{ secrets.SAP_DEVELOPER_HUB_CLIENT_ID }}
+      SAP_DEVELOPER_HUB_CLIENT_SECRET: ${{ secrets.SAP_DEVELOPER_HUB_CLIENT_SECRET }}
+      SAP_DEVELOPER_HUB_TEST_PRODUCT_NAME: ${{ secrets.SAP_DEVELOPER_HUB_TEST_PRODUCT_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Skip if no test tenant is configured
+        if: env.SAP_DEVELOPER_HUB_URL == ''
+        run: echo "No SAP_DEVELOPER_HUB_URL secret configured; skipping." && exit 0
+      - name: Run acceptance tests
+        if: env.SAP_DEVELOPER_HUB_URL != ''
+        run: go test -v -timeout 60m ./...

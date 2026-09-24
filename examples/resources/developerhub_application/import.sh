@@ -1,0 +1,1 @@
+terraform import developerhub_application.sales_app <application_id>

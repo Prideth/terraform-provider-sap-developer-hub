@@ -1,0 +1,1 @@
+terraform import developerhub_product_subscription.sales_app_to_sales_api <application_id>/<subscription_id>
