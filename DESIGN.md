@@ -447,3 +447,35 @@ In priority order, contingent on verifying the underlying API against
 5. Centralized Developer Hub connections, if a public write API surfaces —
    with mandatory irreversibility warnings in the resource docs and no
    forced recreation.
+
+## 20. API Verification Policy
+
+Every feature must be built against, and re-validated against, the **newest**
+version of each of these sources, in this order of authority:
+
+1. **The live Developer Hub tenant.** For the OData service
+   (`/odata/1.0/data.svc/`), the OData protocol requires every service to
+   publish its current contract at `$metadata`. `developerhub.Contract`
+   (`internal/client/developerhub/contract.go`) lists every entity set,
+   property and navigation property the provider reads or writes, and
+   `TestAccServiceContract` checks it against the tenant's live `$metadata`
+   on every acceptance run, failing with the exact entity set and field if
+   SAP renames or removes one. `TestContract_CoversEveryWireField` (a plain
+   unit test) derives field names from the client's wire structs by
+   reflection, so a field cannot be added to the client without also being
+   added to the contract. The `/api/1.0/` endpoints are plain JSON rather
+   than OData, so they are covered by the data sources' own acceptance tests
+   instead. Run all of this with `make verify-api`.
+2. **SAP Business Accelerator Hub (`api.sap.com`) OpenAPI specs** for the
+   `APIMgmt` package's Developer Hub artifacts.
+3. **SAP Help Portal (`help.sap.com`).**
+
+### Current verification status
+
+| Source | Version checked | Status |
+|---|---|---|
+| `help.sap.com` (via the official `SAP-docs/btp-integration-suite` mirror) | mirror commit `33f3395`, 2026-09-18 (the mirror's newest commit as of 2026-09-25) | **Verified** — every endpoint and field in `Contract` traces to a quoted payload or EDMX in this revision (§5, §9) |
+| `api.sap.com` specs | – | **Not verified.** Unreachable from the development environment (`help.sap.com`, `api.sap.com`, `community.sap.com`, `developers.sap.com` and the `cloudintegration.hana.ondemand.com` mirror of the Accelerator Hub are all rejected by its network policy). Artifacts confirmed to exist, to be checked against `Contract` as soon as they are reachable: `DevPortal_Application_CF` ("Developer Hub - Application (CF)" — the primary one for `developerhub_application` and `developerhub_product_subscription`), `DevPortal_RegisteringUsers_CF`, `DevPortal_ExternalGovernance_CF`, `DevPortal_ExternalGovernanceSPI_CF`. |
+| Live Developer Hub `$metadata` and `/api/1.0/` | – | **Not yet run.** No tenant credentials in the development environment. Run `make verify-api` with `SAP_DEVELOPER_HUB_*` set; the weekly acceptance workflow does the same once the repository secrets are configured. |
+
+Update this table whenever any of the three is checked again.

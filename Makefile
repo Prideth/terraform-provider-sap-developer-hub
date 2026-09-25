@@ -1,6 +1,6 @@
 BINARY=terraform-provider-sap-developer-hub
 
-.PHONY: build test unit-test acceptance-test fmt vet lint tidy docs clean
+.PHONY: build test unit-test acceptance-test verify-api fmt vet lint tidy docs clean
 
 build:
 	go build -o $(BINARY) .
@@ -12,6 +12,11 @@ unit-test:
 
 acceptance-test:
 	TF_ACC=1 go test -v -timeout 60m ./...
+
+# Checks every entity set and field the provider uses against the live
+# tenant's OData $metadata and /api/1.0/ endpoints. Needs SAP_DEVELOPER_HUB_*.
+verify-api:
+	TF_ACC=1 go test -v -timeout 10m -run 'TestAccServiceContract|TestAccCurrentUserDataSource|TestAccRegisteredUsersDataSource' ./...
 
 fmt:
 	gofmt -w .

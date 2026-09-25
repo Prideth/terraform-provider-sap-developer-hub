@@ -85,6 +85,31 @@ func (c *Client) send(ctx context.Context, method, path string, body any, out an
 	return nil
 }
 
+// getXML issues a GET expecting an XML body (used only for the OData
+// $metadata document) and returns the raw bytes.
+func (c *Client) getXML(ctx context.Context, path string) ([]byte, error) {
+	req, err := sapthttp.NewRequest(ctx, http.MethodGet, c.url(path), nil)
+	if err != nil {
+		return nil, fmt.Errorf("building Developer Hub API request: %w", err)
+	}
+	req.Header.Set("Accept", "application/xml")
+
+	resp, err := c.http.Do(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("calling Developer Hub API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := sapthttp.ReadLimited(resp)
+	if err != nil {
+		return nil, fmt.Errorf("reading Developer Hub API response: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return nil, parseError(resp.StatusCode, body)
+	}
+	return body, nil
+}
+
 func (c *Client) get(ctx context.Context, path string, out any) error {
 	return c.send(ctx, http.MethodGet, path, nil, out)
 }

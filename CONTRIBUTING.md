@@ -37,12 +37,18 @@ See [`README.md`](README.md#development) for the full `make` targets.
 
 ## Adding or changing a resource
 
-1. Add the API research to `DESIGN.md` §5 first, with a citation to the
-   exact SAP document and, ideally, a quoted sample payload. If you cannot
-   find one, stop - see Ground rule 1.
+1. Check the **newest** version of the API first, in the order `DESIGN.md`
+   §20 lays out: the live tenant's `$metadata`, then the `api.sap.com`
+   OpenAPI spec for the relevant `DevPortal_*` artifact, then
+   `help.sap.com`. Add the research to `DESIGN.md` §5 with a citation to
+   the exact source and version, and update the §20 status table. If you
+   cannot find a documented API, stop - see Ground rule 1.
 2. Add or extend the domain client in `internal/client/developerhub`, with
    unit tests against a local `httptest` server covering the happy path,
-   not-found, and at least one conflict/validation error.
+   not-found, and at least one conflict/validation error. Add every new
+   OData entity set, property and navigation property to
+   `developerhub.Contract` (`TestContract_CoversEveryWireField` fails if
+   you forget), then run `make verify-api` against a tenant.
 3. Add the resource/data source under `internal/provider`, following the
    existing files' conventions (schema description referencing `DESIGN.md`,
    `RequiresReplace` only where SAP genuinely requires it, not-found

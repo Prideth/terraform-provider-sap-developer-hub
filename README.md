@@ -158,15 +158,24 @@ make docs         # regenerate docs/ with tfplugindocs
 ```shell
 make unit-test          # go test -race -cover ./... - always runs, no credentials needed
 make acceptance-test     # TF_ACC=1 go test -v -timeout 60m ./... - requires real credentials
+make verify-api          # checks the provider against the live tenant's current API - requires real credentials
 ```
+
+`make verify-api` compares every OData entity set and field the provider
+uses against the tenant's live `$metadata`, and exercises the `/api/1.0/`
+endpoints behind the data sources, so a change on SAP's side shows up as a
+precise failure rather than a confusing error at `apply` time. See
+`DESIGN.md` §20 for the verification policy and its current status.
 
 Acceptance tests exercise the full create/plan/update/import cycle of each
 resource against a real Developer Hub tenant. They require
 `TF_ACC=1` plus the same `SAP_DEVELOPER_HUB_*` environment variables the
 provider itself reads, and the product subscription test additionally
-requires `SAP_DEVELOPER_HUB_TEST_PRODUCT_NAME` (the technical name of an
-already-published product in the test tenant, since this provider does not
-author products - see Scope). Every acceptance test skips itself
+requires `SAP_DEVELOPER_HUB_TEST_PRODUCT_NAME` and
+`SAP_DEVELOPER_HUB_TEST_PRODUCT_NAME_2` (the technical names of two
+already-published products in the test tenant - two, so the in-place
+product change is exercised - since this provider does not author products;
+see Scope). Every acceptance test skips itself
 gracefully, rather than failing, when these are not set. No credentials are
 ever committed to this repository.
 
