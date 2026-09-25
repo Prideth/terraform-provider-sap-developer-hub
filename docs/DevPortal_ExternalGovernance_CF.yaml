@@ -1,0 +1,191 @@
+swagger: '2.0'
+info: {title: Developer Hub - External Governance (CF), description: This API enables external administrators to manage subscription credentials and governance requests. It supports monitoring request progress and tracking statuses throughout the approval process., version: 1.0.0, x-targetEndpoint: 'https://devportalu34f5b50f-ubd77a98c.hanatrial.ondemand.com/api/1.0'}
+externalDocs: {description: Business Documentation, url: 'https://help.sap.com/docs/integration-suite/sap-integration-suite/governance-workflow-admin-and-developer-actions-post-setup?version=CLOUD'}
+host: sandbox.api.sap.com
+basePath: /apimanagement/devportal/api/1.0
+schemes: [https]
+x-sap-shortText: Provides access to governance services for managing subscription credentials and tracking governance requests.
+x-servers:
+- url: https://produsdevportalapimgmtpa-{consumeraccountname}.us1.hana.ondemand.com/api/1.0
+  description: Developer Hub US1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub US1 consumeraccountname}
+- url: https://produs2devportalapimgmtpphx-{consumeraccountname}.us2.hana.ondemand.com/api/1.0
+  description: Developer Hub US2 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub US2 consumeraccountname}
+- url: https://prodap1devportalapimgmtpau-{consumeraccountname}.ap1.hana.ondemand.com/api/1.0
+  description: Developer Hub AP1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub AP1 consumeraccountname}
+- url: https://prodjp1devportalapimgmtpjp1-{consumeraccountname}.jp1.hana.ondemand.com/api/1.0
+  description: Developer Hub JP1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub JP1 consumeraccountname}
+- url: https://proddevportalapimgmtpr-{consumeraccountname}.hana.ondemand.com/api/1.0
+  description: Developer Hub ROT API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub ROT consumeraccountname}
+- url: https://prodca1devportalapimgmtpca1-{consumeraccountname}.ca1.hana.ondemand.com/api/1.0
+  description: Developer Hub CA1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub CA1 consumeraccountname}
+- url: https://produs3devportalapimgmtpus3-{consumeraccountname}.us3.hana.ondemand.com/api/1.0
+  description: Developer Hub US3 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub US3 consumeraccountname}
+- url: https://prodbr1devportalapimgmtpbr1-{consumeraccountname}.br1.hana.ondemand.com/api/1.0
+  description: Developer Hub BR1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub BR1 consumeraccountname}
+- url: https://prodae1devportalapimgmtpae1-{consumeraccountname}.ae1.hana.ondemand.com/api/1.0
+  description: Developer Hub AE1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub AE1 consumeraccountname}
+- url: https://prodsa1devportalapimgmtpsa1-{consumeraccountname}.sa1.hana.ondemand.com/api/1.0
+  description: Developer Hub SA1 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub SA1 consumeraccountname}
+- url: https://prodeu2devportalapimgmtpeu2-{consumeraccountname}.eu2.hana.ondemand.com/api/1.0
+  description: Developer Hub EU2 API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub EU2 consumeraccountname}
+- url: https://devportalu34f5b50f-{consumeraccountname}.hanatrial.ondemand.com/api/1.0
+  description: Developer Hub API endpoint
+  templates:
+    consumeraccountname: {description: SAP API Management Developer Hub consumeraccountname}
+consumes: [application/json]
+produces: [application/json]
+securityDefinitions:
+  bearerAuth: {type: apiKey, name: Authorization, in: header, description: 'JWT Bearer token authentication. Include the token in the Authorization header as ''Bearer {token}''. Tokens can be obtained from the authentication endpoint.'}
+  basicAuth: {type: basic, description: 'Basic HTTP authentication. Include credentials in the Authorization header as ''Basic {base64(username:password)}''.'}
+security:
+- bearerAuth: []
+- basicAuth: []
+tags:
+- {name: Deletion Confirmation, description: Operations for confirming that subscription credentials are deleted from origin.}
+- {name: Governance Decision, description: Operations to handle governance request decisions including approval and rejection.}
+paths:
+  /deletion-confirmation:
+    post:
+      tags: [Deletion Confirmation]
+      summary: Invalidate subscription credentials
+      description: |-
+        This operation verifies that the subscription credentials have been removed and confirms that the subscription is now eligible for deletion.
+
+        **Important**: This action is irreversible. To regain access after deletion, the subscription must undergo the full approval process again.
+      operationId: invalidateCredentials
+      parameters:
+      - name: body
+        in: body
+        description: Subscription credential information to be invalidated
+        required: true
+        schema: {$ref: '#/definitions/DeletionConfirmation'}
+      responses:
+        '201': {description: Subscription deleted}
+        '400':
+          description: Bad Request - Invalid deletion confirmation payload
+          schema: {$ref: '#/definitions/ErrorResponse'}
+        '401':
+          description: Unauthorized - Invalid or missing authentication credentials
+          schema: {$ref: '#/definitions/ErrorResponse'}
+        '500':
+          description: Internal Server Error - Server encountered an unexpected condition
+          schema: {$ref: '#/definitions/ErrorResponse'}
+      security:
+      - bearerAuth: []
+  /governanceRequests/{id}:
+    put:
+      tags: [Governance Decision]
+      summary: Update governance request status
+      description: |-
+        Updates the status of a governance request by approving or rejecting it. This endpoint allows authorized users to make decisions on pending governance requests.
+
+        **Authorization**: Requires 'AuthGroup.External.Reviewer' role.
+
+        **Decision Updates**:
+        - **APPROVED**: Triggers the approval and updates credentials
+        - **REJECTED**: Triggers the rejection process
+
+        **Note**: Only approved and rejected decisions are allowed for updates. The system validates that the request exists and the entity details match.
+      operationId: updateGovernanceRequest
+      parameters:
+      - {name: id, in: path, description: Unique identifier assigned to the governance request being updated, required: true, type: string}
+      - name: body
+        in: body
+        description: Governance request update information
+        required: true
+        schema: {$ref: '#/definitions/GovernanceDecision'}
+      responses:
+        '200': {description: Governance request updated successfully}
+        '400':
+          description: Bad Request - Invalid governance request payload. Please check the request details.
+          schema: {$ref: '#/definitions/ErrorResponse'}
+        '401':
+          description: Unauthorized - Invalid or missing authentication credentials
+          schema: {$ref: '#/definitions/ErrorResponse'}
+        '500':
+          description: Internal Server Error
+          schema: {$ref: '#/definitions/ErrorResponse'}
+      security:
+      - bearerAuth: []
+definitions:
+  DeletionConfirmation:
+    type: object
+    required: [entityId, entityType, status]
+    properties:
+      entityId: {type: string, maxLength: 255, description: Unique identifier of the entity whose credentials are to be managed. This field is mandatory for credential invalidation operations., example: 8fc16f39-f722-43c6-9108-0209dcd50d15}
+      entityType:
+        type: string
+        description: Type of entity for which credentials are being managed. This field must be either APPLICATION or AGENT.
+        enum: [APPLICATION, AGENT]
+        example: APPLICATION
+      status:
+        type: string
+        description: Target status for the credential operation. For delete operations, only INVALIDATE is allowed, which removes entity credentials permanently.
+        enum: [INVALIDATE]
+        example: INVALIDATE
+    description: Data transfer object for credential deletion or invalidation requests. This class encapsulates the required information to identify and execute credential invalidation for specific subscriptions.
+  GovernanceDecision:
+    type: object
+    required: [entityId, entityType, decision, requestType]
+    properties:
+      decision:
+        type: string
+        description: Decision for the governance request. Only approved and rejected are allowed for updates.
+        enum: [APPROVED, REJECTED]
+        example: APPROVED
+      entityId: {type: string, maxLength: 255, description: Unique identifier of the entity associated with this governance request. This field must match the existing request as validated by the controller., example: 8fc16f39-f722-43c6-9108-0209dcd50d15}
+      entityType:
+        type: string
+        description: Type of entity involved in the governance request. This field must match the existing request entity type.
+        enum: [APPLICATION, AGENT]
+        example: APPLICATION
+      requestType:
+        type: string
+        description: Category of the governance request indicating the type of action requested. This field is mandatory.
+        enum: [CREATE, UPDATE]
+        example: CREATE
+      comments: {type: string, maxLength: 255, description: Additional comments or justification for the decision., example: Request approved after security review}
+      additionalObject: {$ref: '#/definitions/ApplicationCredentialObject'}
+    description: 'This data transfer object is used to make governance decisions on requests, allowing actions to be approved or rejected. The controller validates the required fields: decision (APPROVED or REJECTED), entityId (the subscription ID), entityType (whether the subscription is for an APPLICATION or an AGENT), and requestType (CREATE or UPDATE).'
+  ApplicationCredentialObject:
+    type: object
+    properties:
+      id: {type: string, description: Unique identifier for the additional object, example: ADDITIONAL_001}
+      key: {type: string, description: API key or client identifier for authentication, example: client_key_12345}
+      secret: {type: string, description: API secret or client secret for authentication. This field contains sensitive information., format: password, example: client_secret_abcdef}
+      tokenURL: {type: string, description: URL endpoint for token authentication and credential validation, format: uri, example: 'https://auth.e-governance.gov/oauth/token'}
+    description: Includes extra attributes for governance requests, such as authentication credentials and endpoint configurations, which are crucial for managing subscription access.
+  ErrorResponse:
+    type: object
+    required: [error]
+    properties:
+      error:
+        type: object
+        required: [code, message]
+        properties:
+          code: {type: integer, description: HTTP status code matching the response header, example: 400}
+          message: {type: string, description: Human-readable description of the error, example: Invalid request payload - missing required field 'entityId'}
+        description: Error details object containing status code and message
+    description: Standard error response format with consistent structure across all error scenarios

@@ -1,0 +1,217 @@
+x-odata-version: '4.0'
+swagger: '2.0'
+info: {title: Developer Hub - Registering Users(CF), description: Developer Hub registering user service allows you to register new users on to the Developer Hub. An application developer can access the Developer Hub only if he is registered on the Developer Hub., version: '1.0', x-targetEndpoint: 'https://us10trialdevportal.cfapps.us10.hana.ondemand.com/api/1.0'}
+securityDefinitions:
+  OAuth2_ClientCredentials:
+    type: oauth2
+    flow: application
+    tokenUrl: https://{tokenUrl}/oauth/token?grant_type=client_credentials
+    scopes: {}
+security:
+- OAuth2_ClientCredentials: []
+externalDocs: {description: Business Documentation, url: 'https://help.sap.com/viewer/66d066d903c2473f81ec33acfe2ccdb4/Cloud/en-US/786d107e1dbf414ca15ae9ddb2cb49e6.html'}
+host: sandbox.api.sap.com
+schemes: [https]
+x-sap-shortText: Enables you to register new users on to the Developer Hub.
+basePath: /sapapimanagement/api/1.0
+x-servers:
+- url: https://eu20devportal.cfapps.eu20.hana.ondemand.com/api/1.0
+  description: Developer Hub US1 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub US1 tokenUrl}
+- url: https://us20devportal.cfapps.us20.hana.ondemand.com/api/1.0
+  description: Developer Hub US20 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub US20 tokenUrl}
+- url: https://jp20devportal.cfapps.jp20.hana.ondemand.com/api/1.0
+  description: Developer Hub jp20 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub jp20 tokenUrl}
+- url: https://ap21devportal.cfapps.ap21.hana.ondemand.com/api/1.0
+  description: Developer Hub ap21 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub ap21 tokenUrl}
+- url: https://us21apiportal.cfapps.us21.hana.ondemand.com/api/1.0
+  description: Developer Hub us21 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub us21 tokenUrl}
+- url: https://ap10devportal.cfapps.ap10.hana.ondemand.com/api/1.0
+  description: Developer Hub ap10 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub ap10 tokenUrl}
+- url: https://br10devportal.cfapps.br10.hana.ondemand.com/api/1.0
+  description: Developer Hub br10 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub br10 tokenUrl}
+- url: https://jp10devportal.cfapps.jp10.hana.ondemand.com/api/1.0
+  description: Developer Hub jp10 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub jp10 tokenUrl}
+- url: https://eu10devportal.cfapps.eu10.hana.ondemand.com/api/1.0
+  description: Developer Hub eu10 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub eu10 tokenUrl}
+- url: https://us10devportal.cfapps.us10.hana.ondemand.com/api/1.0
+  description: Developer Hub us10 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub us10 tokenUrl}
+- url: https://ca10devportal.cfapps.ca10.hana.ondemand.com/api/1.0
+  description: Developer Hub ca10 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub ca10 tokenUrl}
+- url: https://ap11devportal.cfapps.ap11.hana.ondemand.com/api/1.0
+  description: Developer Hub ap11 API endpoint
+  templates:
+    tokenUrl: {description: Developer Hub ap11 tokenUrl}
+consumes: [application/json]
+produces: [application/json]
+definitions:
+  badRequest: {type: string}
+  InternalError:
+    type: object
+    properties:
+      code: {type: string, description: Error code}
+      message:
+        type: object
+        properties:
+          lang: {type: string, description: Language code of the error mesage}
+          value: {type: string, description: Detailed error message}
+  developerRoles:
+    type: object
+    properties:
+      rolesAccess:
+        type: array
+        items:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [registered, revoked, rejected]
+              default: registered
+            role: {type: string, default: API_ApplicationDeveloper}
+            responseReason: {type: string, default: Accepting or Rejecting or Revoking Access}
+  developerEntity:
+    type: object
+    properties:
+      autoReLogin:
+        type: boolean
+        enum: [false, true]
+      rolesAccess:
+        type: array
+        items:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [registered, revoked]
+              default: registered
+            role: {type: string, default: API_ApplicationDeveloper}
+            responseReason:
+              type: [string, 'null']
+      userId: {type: string}
+      emailId: {type: string}
+      firstName: {type: string}
+      lastName: {type: string}
+      country: {type: string}
+  developerPostEntity:
+    type: object
+    properties:
+      rolesAccess:
+        type: array
+        items:
+          type: object
+          properties:
+            requestReason: {type: string}
+            role: {type: string, default: API_ApplicationDeveloper}
+      userId: {type: string}
+      emailId: {type: string}
+      firstName: {type: string}
+      lastName: {type: string}
+      country: {type: string}
+paths:
+  /registrations/{developerid}:
+    put:
+      tags: [registrations]
+      summary: Accept or reject or revoke a specific developers access to the Developer Hub.
+      description: Developer Hub admin can revoke the access of an existing user by setting the status to revoked. Similarly, request from an user to access the Developer Hub can either be accepted or rejected by setting the status to registered or rejected respectively.
+      produces: [application/json]
+      parameters:
+      - name: Developer Roles
+        in: body
+        description: New entity
+        schema: {$ref: '#/definitions/developerRoles'}
+      - {name: developerid, in: path, required: true, type: string}
+      responses:
+        '200':
+          description: Created entity
+          schema: {$ref: '#/definitions/developerEntity'}
+        '400':
+          description: Bad Request - Missing required parameter or provided input not in the required format
+          schema: {$ref: '#/definitions/badRequest'}
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/InternalError'}
+  /registrations:
+    get:
+      tags: [registrations]
+      summary: Get the list of both registered users and users whose registration request is still pending for confirmation.
+      description: Depending on the request, the list of users is displayed. Select registered to view all registered users. Select pending  to view all users whose registration is yet to be confirmed.
+      produces: [application/json]
+      parameters:
+      - name: type
+        in: query
+        description: Select the type, either registered or pending. Default value is registered
+        required: true
+        enum: [registered, pending]
+        default: registered
+        type: string
+      responses:
+        '200':
+          description: Retrieved entity
+          schema:
+            title: Developer
+            type: array
+            items:
+              type: object
+              properties:
+                autoReLogin:
+                  type: boolean
+                  enum: [false, true]
+                rolesAccess:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      status: {type: string, default: registered}
+                      role: {type: string, default: registered}
+                userId: {type: string}
+                emailId: {type: string}
+                firstName: {type: string}
+                lastName: {type: string}
+                country: {type: string}
+        '400':
+          description: Bad Request - Missing required parameter or provided input not in the required format
+          schema: {$ref: '#/definitions/badRequest'}
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/InternalError'}
+    post:
+      tags: [registrations]
+      summary: Register on the Developer Hub.
+      description: 'Users register on the Developer Hub to gain access to the Portal. This operation sends an access request to the portal admin. However, if this operation is performed by the portal admin, then the user will be registered on the portal and will have the required permissions to access the portal. '
+      produces: [application/json]
+      parameters:
+      - name: Developer Roles
+        in: body
+        description: New entity
+        schema: {$ref: '#/definitions/developerPostEntity'}
+      responses:
+        '201':
+          description: Created entity
+          schema: {$ref: '#/definitions/developerEntity'}
+        '400':
+          description: Bad Request - Missing required parameter or provided input not in the required format
+          schema: {$ref: '#/definitions/badRequest'}
+        default:
+          description: Error
+          schema: {$ref: '#/definitions/InternalError'}

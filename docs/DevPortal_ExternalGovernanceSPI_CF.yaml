@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info: {title: Developer Hub - Service Provider Interface (CF), description: The API is designed to handle governance requests and manage credentials related to external subscriptions. It includes endpoints that allow users to create governance requests and remove credentials for specific subscriptions., version: 1.0.0}
+x-sap-direction: outbound
+externalDocs: {description: E-Governance API Documentation, url: 'https://help.sap.com/docs/integration-suite/sap-integration-suite/governance-workflow-admin-and-developer-actions-post-setup?version=CLOUD'}
+x-sap-shortText: Manages governance requests and credentials for external subscriptions.
+tags:
+- {name: Governance Requests, description: Operations to manage governance requests.}
+- {name: Credential Management, description: Operations for managing subscription credentials.}
+paths:
+  /api/v1/callback/governanceRequests:
+    post:
+      tags: [Governance Requests]
+      summary: Create a new governance request
+      description: Creates a new governance request for an external application or agent, with built-in idempotency and a retry mechanism for failed requests.
+      operationId: createGovernanceRequest
+      requestBody:
+        description: Governance request details
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ExternalAppRequest'}
+            examples:
+              applicationRequest:
+                summary: Application governance request
+                value: {id: 8070bab490d4494ca9b377ca052989ad, entityId: 8fc16f39-f722-43c6-9108-0209dcd50d15, entityType: APPLICATION, entityName: Customer Portal Application, changedAt: '1757989097669', requestType: UPDATE, requestedBy: admin@company.com}
+              agentRequest:
+                summary: Agent governance request
+                value: {id: 8070bab490d4494ca9b377ca052989ad, entityId: 8fc16f39-f722-43c6-9108-0209dcd50d15, entityType: AGENT, entityName: Customer Portal Application, changedAt: '1757989097669', requestType: UPDATE, requestedBy: admin@company.com}
+      responses:
+        '201': {description: Governance request created successfully}
+        default:
+          description: Error — 4Customer Portal Application status codes indicate client-side failures; 5Customer Portal Application status codes indicate server-side failures.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
+  /api/v1/callback/entity/{entityType}/{entityId}/credentials:
+    delete:
+      tags: [Credential Management]
+      summary: Delete entity credentials
+      description: Initiates the deletion process for credentials associated with a specific subscription. The deletion behavior depends on the system configuration - it may be processed immediately or queued for approval based on the approver's decision.
+      operationId: deleteEntityCredentials
+      parameters:
+      - name: entityType
+        in: path
+        description: Type of the entity (Applications or Agents)
+        required: true
+        schema:
+          type: string
+          enum: [Applications, Agents]
+        example: Applications
+      - name: entityId
+        in: path
+        description: Unique identifier of the entity
+        required: true
+        schema: {type: string}
+        example: 8fc16f39-f722-43c6-9108-0209dcd50d15
+      responses:
+        '200': {description: Credentials deleted successfully}
+        '202': {description: 'Deletion request accepted and queued for approval. Once it is approved, execute the ''Deletion Confirmation'' API in Developer Hub to delete the subscription.'}
+        default:
+          description: Error - 4.x.x status codes are considered as failure due to client-side issues, 5.x.x status codes are considered as failure due to server-side issues
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
+components:
+  schemas:
+    ExternalAppRequest:
+      title: External Subscription Request
+      description: Represents a governance request for an external subscription, for an application or an agent.
+      type: object
+      properties:
+        id: {type: string, description: Unique identifier for the governance request. It is mandatory for approval/reject of the request., example: 8070bab490d4494ca9b377ca052989ad}
+        entityId: {type: string, description: Unique identifier of the entity (application or agent), maxLength: 255, example: 8fc16f39-f722-43c6-9108-0209dcd50d15}
+        entityType:
+          type: string
+          description: Type of the entity being governed
+          enum: [APPLICATION, AGENT]
+          example: APPLICATION
+        entityName: {type: string, description: Human-readable name of the entity, maxLength: 255, example: Customer Portal Application}
+        changedAt: {type: string, description: 'Timestamp (epoch milliseconds as string, timezone as UTC) when the request was last modified', example: '1700827200000'}
+        requestType:
+          type: string
+          description: Type of governance request being made
+          enum: [CREATE, UPDATE]
+          example: CREATE
+        requestedBy: {type: string, description: Identifier of the user or system that created the request, maxLength: 255, example: admin@company.com}
+      required: [id, entityId, entityType, requestType]
+      example: {id: 8070bab490d4494ca9b377ca052989ad, entityId: 8fc16f39-f722-43c6-9108-0209dcd50d15, entityType: APPLICATION, entityName: Customer Portal Application, changedAt: '1700827200000', requestType: CREATE, requestedBy: admin@company.com}
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: {type: integer, description: HTTP status code matching the response header}
+            message: {type: string, description: Human-readable description of the error}
+          description: Error details object containing status code and message
+      description: Standard error response format with consistent structure across all error scenarios.
