@@ -178,6 +178,11 @@ built and published by [GoReleaser](https://goreleaser.com/) via
 linux/windows/darwin on amd64/arm64, plus the
 `terraform-registry-manifest.json` the Terraform Registry requires.
 
+## Roadmap
+
+See [`ROADMAP.md`](ROADMAP.md) for the prioritized list of researched but
+not-yet-verified features.
+
 ## Known limitations
 
 See [`DESIGN.md`](DESIGN.md) §12 for the full, cited list. In short: this
