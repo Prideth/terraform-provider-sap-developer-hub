@@ -19,8 +19,13 @@ list for whoever picks this up next, in order:
 5. **Centralized Developer Hub connections**, if a public write API
    surfaces - with mandatory irreversibility warnings in the resource docs
    (`DESIGN.md` §10) and no forced recreation.
-6. **Application `app_key`/`app_secret`**, once a JSON sample or API
-   reference confirms their actual field names (`DESIGN.md` §6/§12).
+6. **Rate plans** (`APIMgmt.RatePlans`), if SAP Monetization support is
+   ever in scope for this provider - the entity and its navigation
+   property are already confirmed to exist (`DESIGN.md` §9/§12).
+
+(Application `app_key`/`app_secret` were originally on this list; a later
+research pass found the exact field names and they're implemented as of
+`developerhub_application` - see `DESIGN.md` §6/§18.)
 
 None of these should be implemented against a guessed endpoint - update
 `DESIGN.md` §5 with the verified evidence first, the same way every

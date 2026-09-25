@@ -37,8 +37,12 @@ type applicationAttributeModel struct {
 type applicationModel struct {
 	ID          types.String                `tfsdk:"id"`
 	Title       types.String                `tfsdk:"title"`
+	Description types.String                `tfsdk:"description"`
+	CallbackURL types.String                `tfsdk:"callback_url"`
 	Version     types.String                `tfsdk:"version"`
 	DeveloperID types.String                `tfsdk:"developer_id"`
+	AppKey      types.String                `tfsdk:"app_key"`
+	AppSecret   types.String                `tfsdk:"app_secret"`
 	Attribute   []applicationAttributeModel `tfsdk:"attribute"`
 }
 
@@ -50,10 +54,7 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 	resp.Schema = schema.Schema{
 		Description: "A Developer Hub application (\"APIMgmt.Applications\" - see DESIGN.md §5/§6). An " +
 			"application is what an application developer subscribes to products with; use " +
-			"developerhub_product_subscription to attach products to it.\n\n" +
-			"Every application also has a generated app key/secret in Developer Hub, but no public API " +
-			"documentation was found showing their field names, so this resource does not expose them - " +
-			"see DESIGN.md §12.",
+			"developerhub_product_subscription to attach products to it.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -65,6 +66,14 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 			"title": schema.StringAttribute{
 				Required:    true,
 				Description: "The application's display title.",
+			},
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Description: "A description of the application.",
+			},
+			"callback_url": schema.StringAttribute{
+				Optional:    true,
+				Description: "The OAuth callback/redirect URL for the application.",
 			},
 			"version": schema.StringAttribute{
 				Computed:    true,
@@ -78,6 +87,25 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Description: "The Developer Hub developer id (registered user id) this application " +
 					"belongs to. Use the developerhub_current_user or developerhub_registered_users data " +
 					"source to look this up rather than copying it from the UI by hand.",
+			},
+			"app_key": schema.StringAttribute{
+				Computed: true,
+				Description: "The OAuth client id SAP generates for this application. Only returned in " +
+					"the response to creating the application - a subsequent read does not fetch it back " +
+					"(see DESIGN.md §6), so this value is preserved from state rather than re-read.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"app_secret": schema.StringAttribute{
+				Computed:  true,
+				Sensitive: true,
+				Description: "The OAuth client secret SAP generates for this application. Only returned " +
+					"in the response to creating the application - a subsequent read does not fetch it " +
+					"back (see DESIGN.md §6), so this value is preserved from state rather than re-read.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -123,6 +151,8 @@ func (r *applicationResource) Create(ctx context.Context, req resource.CreateReq
 
 	created, err := r.client.CreateApplication(ctx, developerhub.Application{
 		Title:       plan.Title.ValueString(),
+		Description: plan.Description.ValueString(),
+		CallbackURL: plan.CallbackURL.ValueString(),
 		DeveloperID: plan.DeveloperID.ValueString(),
 	})
 	if err != nil {
@@ -145,6 +175,8 @@ func (r *applicationResource) Create(ctx context.Context, req resource.CreateReq
 
 	plan.ID = types.StringValue(created.ID)
 	plan.Version = types.StringValue(created.Version)
+	plan.AppKey = types.StringValue(created.AppKey)
+	plan.AppSecret = types.StringValue(created.AppSecret)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -179,6 +211,8 @@ func (r *applicationResource) Read(ctx context.Context, req resource.ReadRequest
 
 	state.Title = types.StringValue(app.Title)
 	state.Version = types.StringValue(app.Version)
+	state.Description = types.StringValue(app.Description)
+	state.CallbackURL = types.StringValue(app.CallbackURL)
 	if app.DeveloperID != "" {
 		state.DeveloperID = types.StringValue(app.DeveloperID)
 	}
@@ -201,9 +235,14 @@ func (r *applicationResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	if plan.Title.ValueString() != state.Title.ValueString() || plan.DeveloperID.ValueString() != state.DeveloperID.ValueString() {
+	if plan.Title.ValueString() != state.Title.ValueString() ||
+		plan.Description.ValueString() != state.Description.ValueString() ||
+		plan.CallbackURL.ValueString() != state.CallbackURL.ValueString() ||
+		plan.DeveloperID.ValueString() != state.DeveloperID.ValueString() {
 		err := r.client.UpdateApplication(ctx, state.ID.ValueString(), developerhub.Application{
 			Title:       plan.Title.ValueString(),
+			Description: plan.Description.ValueString(),
+			CallbackURL: plan.CallbackURL.ValueString(),
 			DeveloperID: plan.DeveloperID.ValueString(),
 			Version:     state.Version.ValueString(),
 		})
@@ -226,6 +265,8 @@ func (r *applicationResource) Update(ctx context.Context, req resource.UpdateReq
 
 	plan.ID = state.ID
 	plan.Version = state.Version
+	plan.AppKey = state.AppKey
+	plan.AppSecret = state.AppSecret
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

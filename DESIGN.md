@@ -152,9 +152,9 @@ the outbound network policy of the sandbox this provider was built in (see
 
 | Feature | SAP doc | Public API | Verified? | Endpoint (as documented) | Auth | Terraform resource | Terraform data source | Import | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Applications | `add-custom-attributes-to-an-application-39c3cbd.md`, `custom-attributes-90a5a6d.md` | Yes | **Verified** (sample payloads) | `POST /odata/1.0/data.svc/APIMgmt.Applications` on the Dev-Portal host | OAuth2 client-credentials (devportal-apiaccess) | `developerhub_application` | – | by application id | Implemented |
+| Applications | `add-custom-attributes-to-an-application-39c3cbd.md`, `custom-attributes-90a5a6d.md`, `create-or-update-or-read-an-application-using-subscription-key-e2645b5.md` | Yes | **Verified** (multiple worked create/update/read/delete examples, including exact `app_key`/`app_secret` field names) | `POST/GET/PUT/DELETE /odata/1.0/data.svc/APIMgmt.Applications(<id>)` on the Dev-Portal host | OAuth2 client-credentials (devportal-apiaccess) | `developerhub_application` | – | by application id | Implemented |
 | Application custom attributes | `custom-attributes-90a5a6d.md` | Yes | **Verified** | `POST .../APIMgmt.Applications(<id>)/ToAttributes`, `PUT`/`DELETE .../APIMgmt.Attributes(name=..,entityId=..,entityType='Applications')` | same | modeled as a nested `attribute` block on `developerhub_application` | – | via parent application | Implemented |
-| Product subscriptions | `custom-attributes-90a5a6d.md` (nested `ToSubscriptions`/`ToAPIProduct` in the Applications create payload), `manage-product-subscriptions-452fcef.md` | Yes | **Partially verified**: the nested create shape is shown verbatim; standalone read/update/delete of a single subscription entity were not shown and are implemented following the same OData conventions used elsewhere in this API family (see §9) | `.../APIMgmt.Applications(<id>)/ToSubscriptions` | same | `developerhub_product_subscription` | – | `<application_id>/<product_name>` | Implemented, with a documented inference (§9) |
+| Product subscriptions | `create-or-update-or-read-an-application-using-subscription-key-e2645b5.md` (full EDMX + worked create/update payloads for the top-level `APIMgmt.Subscriptions` entity), `manage-product-subscriptions-452fcef.md` | Yes | **Verified**: create (`POST`) and update (`PUT`) shown verbatim against `APIMgmt.Subscriptions(<id>)` directly; delete is a high-confidence inference by analogy with the sibling `APIMgmt.Applications` entity's documented `DELETE` (see §9) | `POST/GET/PUT/DELETE /odata/1.0/data.svc/APIMgmt.Subscriptions(<id>)` | same | `developerhub_product_subscription` | – | by subscription id | Implemented |
 | Developer / current user identity | `accessing-developer-hub-apis-programmatically-dabee6e.md` | Yes | **Verified** (literal example request/response) | `GET /api/1.0/user` | Bearer token | – | `developerhub_current_user` | n/a (read-only) | Implemented |
 | Registered developers | `accessing-developer-hub-apis-programmatically-dabee6e.md` | Yes | **Verified** (literal example response) | `GET /api/1.0/registrations?type=registered` | Bearer token | – | `developerhub_registered_users` | n/a | Implemented |
 | Bulk user registration (admin) | `registering-on-developer-hub-c85fafe.md` | Yes, named artifact | Documented to exist, schema unverified: `api.sap.com/api/DevPortal_RegisteringUsers_CF/resource` | unknown exact path/payload | OAuth2 | not implemented | not implemented | – | **SAP API unavailable to verify** |
@@ -182,8 +182,8 @@ silently dropped.
 
 | Terraform type | Backing API | Lifecycle |
 |---|---|---|
-| `developerhub_application` | `APIMgmt.Applications` (OData, devportal) | Full CRUD on `id` (Computed, server-assigned), `title`, `version`, `developer_id`, and nested `attribute` blocks (`ToAttributes`). SAP's UI documentation (`add-custom-attributes-to-an-application-39c3cbd.md`) confirms every application also has a generated app key/secret ("handover the application key and secret to that user"), but no JSON sample shows their actual field names, so this provider does **not** guess them — `app_key`/`app_secret` are tracked as a documented gap (§12) rather than implemented under an invented field name. |
-| `developerhub_product_subscription` | `APIMgmt.Applications(<id>)/ToSubscriptions` | Create/Read/Delete. The sample create payload shows each subscription carrying its own server-assigned `id`, distinct from the product it targets (`ToAPIProduct`), so the subscription is its own keyed child entity of the application rather than being addressable by product name alone. No update endpoint is documented; changing which product a subscription targets is a replace (`RequiresReplace` on `product_name`). |
+| `developerhub_application` | `APIMgmt.Applications` (OData, devportal) | Full CRUD on `id` (Computed, server-assigned), `title`, `description`, `callback_url` (wire field `callbackurl`), `version`, `developer_id`, `app_key`/`app_secret` (Computed; `app_secret` also `Sensitive`), and nested `attribute` blocks (`ToAttributes`). `app_key`/`app_secret` are generated by SAP and returned **only** in the Create response — `create-or-update-or-read-an-application-using-subscription-key-e2645b5.md` states outright that a `GET` "will not fetch app key and secret" — so both are `Computed` with `UseStateForUnknown` and are simply carried forward from state on every subsequent `Read`/`Update` rather than re-fetched. |
+| `developerhub_product_subscription` | `APIMgmt.Subscriptions` (OData, devportal, top-level entity set) | Full CRUD on `id` (Computed, server-assigned), `application_id` (`RequiresReplace` — no documented way to re-parent a subscription to a different application), `product_name` (in-place `Update`, confirmed by a worked `PUT` payload that changes `ToAPIProduct`/`product_id`), and `status` (Computed, read-only, opaque pass-through of SAP's own subscription lifecycle state — see §9). |
 
 ## 7. Data Source Mapping
 
@@ -197,36 +197,72 @@ silently dropped.
 - `developerhub_application`: the Terraform ID is the SAP-assigned
   application id (the `id` field of `APIMgmt.Applications`, a GUID-shaped
   string). Import: `terraform import developerhub_application.example <id>`.
-- `developerhub_product_subscription`: composite ID
-  `<application_id>/<subscription_id>`. The sample create payload
-  (`custom-attributes-90a5a6d.md`) shows a subscription as its own keyed
-  child entity of an application (its own `id`, plus a `ToAPIProduct`
-  navigation to `APIMgmt.APIProducts('<ProdName>')`), server-assigned on
-  create the same way an application's own `id` is. Import:
-  `terraform import developerhub_product_subscription.example <application_id>/<subscription_id>`.
+- `developerhub_product_subscription`: the Terraform ID is the SAP-assigned
+  subscription id (the `id` field of the top-level `APIMgmt.Subscriptions`
+  entity, server-assigned on create the same way an application's own `id`
+  is). `application_id` and `product_name` are both plain fields on the
+  entity itself (`app_id`, `product_id`) and so are populated by `Read`
+  without needing to be encoded into the import identifier. Import:
+  `terraform import developerhub_product_subscription.example <subscription_id>`.
 
 Display names/titles are never used as Terraform IDs; SAP's own payloads use
 stable technical identifiers (`id` for applications, the product's technical
 `name` for the product reference), and this provider follows that.
 
-## 9. Documented Inference: Subscriptions
+## 9. Subscriptions: Design History and the One Remaining Inference
 
-SAP's documentation shows the **nested create** shape for a subscription
-(embedded inside an `APIMgmt.Applications` create payload, or via
-`POST .../APIMgmt.Applications(<id>)/ToSubscriptions`) but does not show a
-worked example of reading, updating, or deleting a single subscription by
-itself. Every other entity in this same API family that SAP *does* fully
-document (`APIMgmt.Attributes`) follows plain OData-style per-entity
-addressing: `GET`/`PUT`/`DELETE Entity(key1=..,key2=..)`, with
-`x-csrf-token: fetch` required ahead of any write.
-`developerhub_product_subscription` follows that same, already-proven
-convention: it addresses a single subscription as
-`APIMgmt.Applications('<app_id>')/ToSubscriptions('<subscription_id>')` for
-`GET`/`DELETE`, using the `id` SAP assigns and returns on create. This is
-called out explicitly, both here and in the resource's own doc comment, as
-a **documented inference** rather than a verified fact — if SAP's actual
-addressing differs, the resource's `Read` will surface that as a normal API
-error rather than crash, and the gap is tracked in `FEATURE_MATRIX.md`.
+This section's design changed once during development, on real evidence,
+and the history is kept here rather than erased because it is exactly the
+kind of correction the project brief asks to be documented rather than
+quietly fixed.
+
+**First pass**: `custom-attributes-90a5a6d.md` shows a subscription nested
+inside an `APIMgmt.Applications` create payload
+(`"ToSubscriptions": [{"id": "...", "ToAPIProduct": [...]}]`), with no
+worked example of reading, updating, or deleting one standalone. The first
+implementation therefore *inferred* that a subscription must be addressed
+as a keyed child of its application
+(`APIMgmt.Applications('<app_id>')/ToSubscriptions('<subscription_id>')`),
+by analogy with how `APIMgmt.Attributes` is addressed elsewhere in this API
+family.
+
+**Correction**: a later, more thorough pass through the same documentation
+mirror turned up
+`create-or-update-or-read-an-application-using-subscription-key-e2645b5.md`,
+which turned out to hold the actual EDMX `<EntityType Name="SubscriptionsType">`
+declaration and multiple full worked payloads. It shows that
+`APIMgmt.Subscriptions` is in fact its **own top-level, independently
+addressable entity set** (`GET`/`POST`/`PUT` directly against
+`APIMgmt.Subscriptions('<id>')`, keyed by `id`), not a nested collection.
+The entity carries plain `app_id`, `product_id`, `developer_id`,
+`isSubscribed`, and `status` fields alongside its `ToApplication`/
+`ToAPIProduct`/`ToRatePlan` navigation properties. A create sends the
+relationship via `ToApplication`/`ToAPIProduct` navigation references
+(`__metadata.uri`); a later `PUT` example that changes the subscribed
+product sends the `product_id` field and the `ToAPIProduct` reference
+together, which is exactly what `UpdateSubscriptionProduct`
+(`internal/client/developerhub/subscriptions.go`) does. `RatePlans`
+(`ToRatePlan`) is part of SAP's Monetization feature and is out of scope
+here (§18/§19) — it is simply omitted from every request this provider
+sends, which the same document confirms is valid for a non-monetized
+subscription (the "older", non-Subscription-entity application flow never
+sets a rate plan at all).
+
+The **one inference that remains**: `DELETE` on `APIMgmt.Subscriptions`
+itself is not shown verbatim anywhere found in this pass. It is inferred
+from the sibling `APIMgmt.Applications` entity's documented
+`DELETE .../APIMgmt.Applications('<app_id>')` on the exact same OData
+service, using the exact same addressing convention now confirmed for
+`GET`/`POST`/`PUT` on `APIMgmt.Subscriptions` itself — a much
+higher-confidence inference than the design it replaced. If SAP's actual
+behavior differs, `Delete` will surface that as a normal API error rather
+than silently succeed, and the gap is tracked in `FEATURE_MATRIX.md`.
+
+`setting-up-external-governance-992512e.md` additionally confirms that a
+subscription rejected under External Governance is **deleted by SAP
+automatically**, not left in a terminal "Rejected" state — this resource's
+existing not-found handling on `Read` already covers that correctly with no
+special-casing needed.
 
 ## 10. Centralized Developer Hub
 
@@ -280,9 +316,11 @@ These are documented gaps, not invented workarounds:
 - **x509-based service keys** — the `devportal-apiaccess` plan supports
   certificate-based service keys in addition to `binding-secret`. Only
   `binding-secret` (client id/secret) is implemented in the first release.
-- **Application `app_key`/`app_secret`** — confirmed by name in SAP's UI
-  documentation, but no JSON sample shows the actual field names SAP's API
-  uses for them, so this provider does not expose them. See §6.
+- **Rate plans** (`APIMgmt.RatePlans`) — real, named in the `Subscriptions`
+  EDMX (§9), but tied to SAP's Monetization feature, which the project
+  brief does not ask for. Not implemented; a subscription is created
+  without a `ToRatePlan` reference, which SAP's own documentation confirms
+  is valid for a non-monetized subscription.
 
 None of these are stubbed with a guessed endpoint. Each is either absent
 from the provider entirely, or (for governed *content*, like MCP-server
@@ -354,7 +392,7 @@ Suite's OData v2 services.
 
 See §8. Both implemented resources support `terraform import`.
 
-## 18. Follow-Up Research Pass
+## 18. Follow-Up Research Passes
 
 A second research pass specifically targeted business system content
 discovery and MCP server/API artifact invocation, since those looked most
@@ -369,16 +407,32 @@ likely to hide an additional public API:
 - `invoke-an-api-artifact-by-obtaining-credentials-via-developer-hub-e79810f.md`
   and the equivalent MCP server page: confirm that a subscription's
   application has a Key/Secret/Token URL visible on its "Overview" tab in
-  the UI - i.e., further confirmation that `developerhub_application` has
-  generated credentials (consistent with §12's `app_key`/`app_secret` gap)
-  - but again as a UI screen, not a documented JSON API response, so this
-  still does not add a verifiable field name to implement against.
+  the UI - at the time, this was the only confirmation found that
+  `developerhub_application` has generated credentials, and only as a UI
+  screen, not a documented JSON API response.
   `configure-mcp-server-access-using-default-authentication-xsuaa-dc283ab.md`:
   MCP server "Agent subscriptions" also generate a client ID/secret through
   Developer Hub, but again only described as a UI flow ("Developer Hub
   automatically generates the client ID and client secret").
 
-None of this changes §5's matrix or §12's gap list - it corroborates them.
+A **third** pass, prompted by continuing to grep the documentation mirror
+more broadly (`grep -rn "api/1\.0\|/odata/1\.0" docs/`) rather than only
+following the Developer Hub-labeled table of contents, found
+`create-or-update-or-read-an-application-using-subscription-key-e2645b5.md`
+filed under the classic API Management docs tree rather than the Developer
+Hub one — which is exactly why the first two passes missed it. It resolved
+what the second pass could not: it holds the actual EDMX and literal
+request/response payloads confirming `app_key`/`app_secret`'s field names,
+the `description`/`callbackurl` fields, and the entire corrected design of
+`APIMgmt.Subscriptions` as a top-level entity documented in §9. Both are
+now implemented; see §5's matrix and §6.
+
+The lesson for anyone continuing this research: SAP's Help Portal mirror
+groups Developer Hub content into more than one directory
+(`ISuite_Integrations_APIs/` and `apim/API-Management/` both contain
+Developer Hub-relevant pages, sometimes as literal duplicates and sometimes
+not), so a keyword grep across the whole mirror finds pages a
+table-of-contents walk of one directory alone will miss.
 
 ## 19. Future Extensions
 

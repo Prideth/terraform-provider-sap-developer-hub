@@ -137,7 +137,7 @@ Both resources support `terraform import`:
 
 ```shell
 terraform import developerhub_application.sales_app <application_id>
-terraform import developerhub_product_subscription.sales_app_to_sales_api <application_id>/<subscription_id>
+terraform import developerhub_product_subscription.sales_app_to_sales_api <subscription_id>
 ```
 
 See each resource's own documentation under [`docs/resources/`](docs/resources/)
@@ -189,9 +189,8 @@ See [`DESIGN.md`](DESIGN.md) §12 for the full, cited list. In short: this
 provider does not manage domain categories, access governance, subscription
 governance settings, site configuration/branding, notifications, or
 centralized Developer Hub connections, because no currently documented
-public REST API for them was found. Application `app_key`/`app_secret` are
-confirmed to exist by SAP's UI documentation but are not exposed here
-because no JSON sample shows their actual field names.
+public REST API for them was found. Rate plans (SAP Monetization) are also
+out of scope, though the underlying entity is confirmed to exist.
 
 ## Disclaimer
 

@@ -4,14 +4,11 @@ page_title: "developerhub_application Resource - developerhub"
 subcategory: ""
 description: |-
   A Developer Hub application ("APIMgmt.Applications" - see DESIGN.md §5/§6). An application is what an application developer subscribes to products with; use developerhub_product_subscription to attach products to it.
-  Every application also has a generated app key/secret in Developer Hub, but no public API documentation was found showing their field names, so this resource does not expose them - see DESIGN.md §12.
 ---
 
 # developerhub_application (Resource)
 
 A Developer Hub application ("APIMgmt.Applications" - see DESIGN.md §5/§6). An application is what an application developer subscribes to products with; use developerhub_product_subscription to attach products to it.
-
-Every application also has a generated app key/secret in Developer Hub, but no public API documentation was found showing their field names, so this resource does not expose them - see DESIGN.md §12.
 
 ## Example Usage
 
@@ -20,6 +17,8 @@ data "developerhub_current_user" "me" {}
 
 resource "developerhub_application" "sales_app" {
   title        = "Sales Application"
+  description  = "Used by the sales integration team"
+  callback_url = "https://sales.example.com/oauth/callback"
   developer_id = data.developerhub_current_user.me.name
 
   attribute {
@@ -44,10 +43,14 @@ resource "developerhub_application" "sales_app" {
 ### Optional
 
 - `attribute` (Block List) A custom attribute on the application ("APIMgmt.Attributes" - see DESIGN.md §5/§6). Up to 18 are permitted, and each name is limited to 255 characters and each value to 1024 characters, per SAP's documented limits. (see [below for nested schema](#nestedblock--attribute))
+- `callback_url` (String) The OAuth callback/redirect URL for the application.
+- `description` (String) A description of the application.
 - `developer_id` (String) The Developer Hub developer id (registered user id) this application belongs to. Use the developerhub_current_user or developerhub_registered_users data source to look this up rather than copying it from the UI by hand.
 
 ### Read-Only
 
+- `app_key` (String) The OAuth client id SAP generates for this application. Only returned in the response to creating the application - a subsequent read does not fetch it back (see DESIGN.md §6), so this value is preserved from state rather than re-read.
+- `app_secret` (String, Sensitive) The OAuth client secret SAP generates for this application. Only returned in the response to creating the application - a subsequent read does not fetch it back (see DESIGN.md §6), so this value is preserved from state rather than re-read.
 - `id` (String) The SAP-assigned application id.
 - `version` (String) The application entity version, as assigned by SAP.
 

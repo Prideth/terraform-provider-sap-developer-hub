@@ -3,15 +3,15 @@
 page_title: "developerhub_product_subscription Resource - developerhub"
 subcategory: ""
 description: |-
-  Subscribes a Developer Hub application to a product ("ToSubscriptions"/"ToAPIProduct" on "APIMgmt.Applications" - see DESIGN.md §5/§6/§9). This does not create or manage the product itself - products are authored and published from SAP Integration Suite / API Portal and are managed by terraform-provider-integration-suite; this resource only references a product by its existing technical name.
-  Whether a subscription needs external approval, and how that approval happens, depends on the tenant's Subscription Governance setting, which has no documented public API and so cannot be read or changed by this provider (DESIGN.md §12) - the subscription is created here exactly as SAP's own governance configuration for the tenant handles it.
+  Subscribes a Developer Hub application to a product (the top-level "APIMgmt.Subscriptions" OData entity - see DESIGN.md §5/§6/§9). This does not create or manage the product itself - products are authored and published from SAP Integration Suite / API Portal and are managed by terraform-provider-integration-suite; this resource only references a product by its existing technical name.
+  Whether a subscription needs external approval, and how that approval happens, depends on the tenant's Subscription Governance setting, which has no documented public API and so cannot be read or changed by this provider (DESIGN.md §12) - the subscription is created here exactly as SAP's own governance configuration for the tenant handles it, and its resulting approval state is exposed read-only via the status attribute. If the tenant uses External Governance and the request is rejected, SAP deletes the subscription itself; this resource detects that on its next refresh and removes it from state, the same as if it had been deleted any other way.
 ---
 
 # developerhub_product_subscription (Resource)
 
-Subscribes a Developer Hub application to a product ("ToSubscriptions"/"ToAPIProduct" on "APIMgmt.Applications" - see DESIGN.md §5/§6/§9). This does not create or manage the product itself - products are authored and published from SAP Integration Suite / API Portal and are managed by terraform-provider-integration-suite; this resource only references a product by its existing technical name.
+Subscribes a Developer Hub application to a product (the top-level "APIMgmt.Subscriptions" OData entity - see DESIGN.md §5/§6/§9). This does not create or manage the product itself - products are authored and published from SAP Integration Suite / API Portal and are managed by terraform-provider-integration-suite; this resource only references a product by its existing technical name.
 
-Whether a subscription needs external approval, and how that approval happens, depends on the tenant's Subscription Governance setting, which has no documented public API and so cannot be read or changed by this provider (DESIGN.md §12) - the subscription is created here exactly as SAP's own governance configuration for the tenant handles it.
+Whether a subscription needs external approval, and how that approval happens, depends on the tenant's Subscription Governance setting, which has no documented public API and so cannot be read or changed by this provider (DESIGN.md §12) - the subscription is created here exactly as SAP's own governance configuration for the tenant handles it, and its resulting approval state is exposed read-only via the status attribute. If the tenant uses External Governance and the request is rejected, SAP deletes the subscription itself; this resource detects that on its next refresh and removes it from state, the same as if it had been deleted any other way.
 
 ## Example Usage
 
@@ -32,11 +32,12 @@ resource "developerhub_product_subscription" "sales_app_to_sales_api" {
 ### Required
 
 - `application_id` (String) The id of the developerhub_application this subscription belongs to.
-- `product_name` (String) The technical name of the product to subscribe to, as published from SAP Integration Suite / API Portal (not this provider). Changing it replaces the subscription, since no update endpoint for retargeting an existing subscription is documented.
+- `product_name` (String) The technical name of the product to subscribe to, as published from SAP Integration Suite / API Portal (not this provider). Changing it updates the subscription in place.
 
 ### Read-Only
 
 - `id` (String) The SAP-assigned subscription id.
+- `status` (String) SAP's own subscription status (for example, a pending-approval state under External Governance). Its exact set of possible values is not documented publicly, so this provider passes it through as an opaque string rather than validating it - see DESIGN.md §9.
 
 ## Import
 
@@ -45,5 +46,5 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
-terraform import developerhub_product_subscription.sales_app_to_sales_api <application_id>/<subscription_id>
+terraform import developerhub_product_subscription.sales_app_to_sales_api <subscription_id>
 ```

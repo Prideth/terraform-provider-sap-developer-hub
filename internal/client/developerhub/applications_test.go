@@ -34,11 +34,14 @@ func TestCreateApplication(t *testing.T) {
 		if body.Title != "Sales App" {
 			t.Fatalf("expected title %q, got %q", "Sales App", body.Title)
 		}
-		if body.ID != "" {
-			t.Fatalf("expected create request to omit id, got %q", body.ID)
+		if body.ID != placeholderID {
+			t.Fatalf("expected create request id to be the documented placeholder %q, got %q", placeholderID, body.ID)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(Application{ID: "app-1", Title: body.Title, Version: "1", DeveloperID: body.DeveloperID})
+		_ = json.NewEncoder(w).Encode(Application{
+			ID: "app-1", Title: body.Title, Version: "1", DeveloperID: body.DeveloperID,
+			AppKey: "generated-key", AppSecret: "generated-secret",
+		})
 	})
 	defer server.Close()
 
@@ -46,8 +49,8 @@ func TestCreateApplication(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateApplication: %v", err)
 	}
-	if created.ID != "app-1" {
-		t.Fatalf("expected id %q, got %q", "app-1", created.ID)
+	if created.ID != "app-1" || created.AppKey != "generated-key" || created.AppSecret != "generated-secret" {
+		t.Fatalf("unexpected created application: %+v", created)
 	}
 }
 
