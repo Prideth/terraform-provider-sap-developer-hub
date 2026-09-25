@@ -22,9 +22,10 @@
 - `master` is the stable/release branch, fast-forwarded only on explicit
   release.
 - `dev` is the permanent integration branch.
-- Feature branches are cut from `dev` and merged back into `dev`, named for
-  what they do (`domain-categories`, `governance-settings`, ...), never
-  with a `claude/`, `ai/`, `bot/` or similar prefix.
+- All other work happens on `feature/<name>` branches, cut from `dev` and
+  merged back into `dev`, where `<name>` describes the change
+  (`feature/domain-categories`, `feature/governance-settings`, ...). No
+  other branch names or prefixes are used.
 
 ## Development setup
 
