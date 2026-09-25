@@ -354,7 +354,33 @@ Suite's OData v2 services.
 
 See §8. Both implemented resources support `terraform import`.
 
-## 18. Future Extensions
+## 18. Follow-Up Research Pass
+
+A second research pass specifically targeted business system content
+discovery and MCP server/API artifact invocation, since those looked most
+likely to hide an additional public API:
+
+- `discover-and-publish-apis-from-business-systems-0cea56f.md`: business
+  system registration is entirely an SAP BTP System Landscape / Global
+  Account Administrator action (outside this provider's scope by
+  definition, §2), and fetching APIs/events from a registered business
+  system inside Developer Hub is documented only as a UI procedure ("Manage
+  Content" → "Business Systems" tab). No REST endpoint found.
+- `invoke-an-api-artifact-by-obtaining-credentials-via-developer-hub-e79810f.md`
+  and the equivalent MCP server page: confirm that a subscription's
+  application has a Key/Secret/Token URL visible on its "Overview" tab in
+  the UI - i.e., further confirmation that `developerhub_application` has
+  generated credentials (consistent with §12's `app_key`/`app_secret` gap)
+  - but again as a UI screen, not a documented JSON API response, so this
+  still does not add a verifiable field name to implement against.
+  `configure-mcp-server-access-using-default-authentication-xsuaa-dc283ab.md`:
+  MCP server "Agent subscriptions" also generate a client ID/secret through
+  Developer Hub, but again only described as a UI flow ("Developer Hub
+  automatically generates the client ID and client secret").
+
+None of this changes §5's matrix or §12's gap list - it corroborates them.
+
+## 19. Future Extensions
 
 In priority order, contingent on verifying the underlying API against
 `api.sap.com`:
