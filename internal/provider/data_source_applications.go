@@ -28,6 +28,7 @@ type applicationSummaryModel struct {
 	ID          types.String `tfsdk:"id"`
 	Title       types.String `tfsdk:"title"`
 	Description types.String `tfsdk:"description"`
+	ShortText   types.String `tfsdk:"short_text"`
 	CallbackURL types.String `tfsdk:"callback_url"`
 	DeveloperID types.String `tfsdk:"developer_id"`
 	Version     types.String `tfsdk:"version"`
@@ -66,6 +67,7 @@ func (d *applicationsDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 						"id":           schema.StringAttribute{Computed: true, Description: "The SAP-assigned application id."},
 						"title":        schema.StringAttribute{Computed: true},
 						"description":  schema.StringAttribute{Computed: true},
+						"short_text":   schema.StringAttribute{Computed: true},
 						"callback_url": schema.StringAttribute{Computed: true},
 						"developer_id": schema.StringAttribute{Computed: true},
 						"version":      schema.StringAttribute{Computed: true},
@@ -119,6 +121,7 @@ func filterApplications(apps []developerhub.Application, developerID string) []a
 			ID:          types.StringValue(app.ID),
 			Title:       types.StringValue(app.Title),
 			Description: types.StringValue(app.Description),
+			ShortText:   types.StringValue(app.ShortText),
 			CallbackURL: types.StringValue(app.CallbackURL),
 			DeveloperID: types.StringValue(app.DeveloperID),
 			Version:     types.StringValue(app.Version),

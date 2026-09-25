@@ -49,7 +49,8 @@ See [`FEATURE_MATRIX.md`](FEATURE_MATRIX.md) for the complete list.
 | Application custom attributes | nested in `developerhub_application` | – | via parent |
 | Product subscriptions | `developerhub_product_subscription` | `developerhub_product_subscriptions` | yes |
 | Current user / developer identity | – | `developerhub_current_user` | n/a |
-| Registered developers | – | `developerhub_registered_users` | n/a |
+| Registered developers | `developerhub_developer` | `developerhub_registered_users`, `developerhub_registration_requests` | yes |
+| Product catalog (read-only) | – | `developerhub_products` | n/a |
 
 Domain categories, access/subscription governance settings, site
 configuration, notifications and centralized Developer Hub connections were

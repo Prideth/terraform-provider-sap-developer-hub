@@ -46,5 +46,6 @@ Read-Only:
 - `description` (String)
 - `developer_id` (String)
 - `id` (String) The SAP-assigned application id.
+- `short_text` (String)
 - `title` (String)
 - `version` (String)

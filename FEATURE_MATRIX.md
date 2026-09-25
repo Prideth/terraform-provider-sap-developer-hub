@@ -10,7 +10,8 @@ citations for every "verified" claim.
 | Product subscriptions | `developerhub_product_subscription` | `developerhub_product_subscriptions` | yes | supported (verified create/read/update; delete inferred by analogy, see `DESIGN.md` §9) |
 | Current user / developer identity | – | `developerhub_current_user` | n/a | supported |
 | Registered developers | – | `developerhub_registered_users` | n/a | supported |
-| Bulk user registration (admin) | – | – | – | SAP API unavailable to verify (`DevPortal_RegisteringUsers_CF` exists but schema unconfirmed) |
+| Developer registration (onboarding, revocation) | `developerhub_developer` | `developerhub_registration_requests` | yes | supported |
+| Product catalog (read-only) | – | `developerhub_products` | n/a | supported |
 | Domain categories | – | – | – | SAP API unavailable (no documented public REST API found) |
 | Access governance (site visibility) | – | – | – | SAP API unavailable (no documented public REST API found) |
 | Subscription governance settings | – | – | – | SAP API unavailable (no documented public REST API found) |

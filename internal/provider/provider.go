@@ -144,6 +144,7 @@ func (p *developerHubProvider) Resources(_ context.Context) []func() resource.Re
 	return []func() resource.Resource{
 		NewApplicationResource,
 		NewProductSubscriptionResource,
+		NewDeveloperResource,
 	}
 }
 
@@ -153,6 +154,8 @@ func (p *developerHubProvider) DataSources(_ context.Context) []func() datasourc
 		NewRegisteredUsersDataSource,
 		NewApplicationsDataSource,
 		NewProductSubscriptionsDataSource,
+		NewProductsDataSource,
+		NewRegistrationRequestsDataSource,
 	}
 }
 

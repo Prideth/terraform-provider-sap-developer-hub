@@ -30,12 +30,16 @@ type RequiredEntitySet struct {
 var Contract = []RequiredEntitySet{
 	{
 		Name:                 "Applications",
-		Properties:           []string{"id", "version", "title", "description", "callbackurl", "developer_id", "app_key", "app_secret"},
+		Properties:           []string{"id", "version", "title", "description", "shortText", "callbackurl", "developer_id", "app_key", "app_secret"},
 		NavigationProperties: []string{"ToAttributes"},
 	},
 	{
 		Name:       "Attributes",
 		Properties: []string{"name", "value", "entityType", "entityId"},
+	},
+	{
+		Name:       "APIProducts",
+		Properties: []string{"name", "title", "version", "vendor", "description", "shortText", "published_at", "published_by"},
 	},
 	{
 		Name:                 "Subscriptions",

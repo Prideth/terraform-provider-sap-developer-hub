@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	"github.com/Prideth/terraform-provider-sap-developer-hub/internal/client/apierror"
 )
 
@@ -26,4 +28,16 @@ func diagnosticDetail(err error) string {
 func isNotFound(err error) bool {
 	var apiErr *apierror.Error
 	return errors.As(err, &apiErr) && apiErr.IsNotFound()
+}
+
+// optionalString maps an optional attribute read back from the API into
+// state. SAP returns an unset optional field as null or "", so an empty API
+// value keeps a null prior value null instead of turning it into "", which
+// would otherwise show a permanent diff for an attribute the configuration
+// never set.
+func optionalString(prior types.String, apiValue string) types.String {
+	if apiValue == "" && prior.IsNull() {
+		return types.StringNull()
+	}
+	return types.StringValue(apiValue)
 }

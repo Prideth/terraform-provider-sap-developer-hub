@@ -58,9 +58,9 @@ func TestReconcileAttributes_IssuesMinimalCalls(t *testing.T) {
 		switch c {
 		case "POST " + applicationsPath + "('app-1')/ToAttributes":
 			sawCreateAdded = true
-		case "PUT " + attributesPath + "(name='changed',entityId='app-1',entityType='Applications')":
+		case "PUT " + attributesPath + "(name='changed',entityId='app-1',entityType='applications')":
 			sawUpdateChanged = true
-		case "DELETE " + attributesPath + "(name='removed',entityId='app-1',entityType='Applications')":
+		case "DELETE " + attributesPath + "(name='removed',entityId='app-1',entityType='applications')":
 			sawDeleteRemoved = true
 		}
 	}
@@ -84,5 +84,17 @@ func TestReconcileAttributes_NoChangesIssuesNoCalls(t *testing.T) {
 
 	if err := res.reconcileAttributes(context.Background(), "app-1", same, same); err != nil {
 		t.Fatalf("reconcileAttributes: %v", err)
+	}
+}
+
+func TestOptionalString(t *testing.T) {
+	if got := optionalString(types.StringNull(), ""); !got.IsNull() {
+		t.Errorf("unset attribute with empty API value must stay null, got %v", got)
+	}
+	if got := optionalString(types.StringValue("old"), ""); got.IsNull() || got.ValueString() != "" {
+		t.Errorf("a value cleared outside Terraform must surface as drift (\"\"), got %v", got)
+	}
+	if got := optionalString(types.StringNull(), "set elsewhere"); got.ValueString() != "set elsewhere" {
+		t.Errorf("a value set outside Terraform must surface as drift, got %v", got)
 	}
 }

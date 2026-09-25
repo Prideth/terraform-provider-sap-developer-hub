@@ -52,3 +52,24 @@ func TestFilterSubscriptions(t *testing.T) {
 		t.Error("expected is_subscribed to be carried over")
 	}
 }
+
+func TestFilterProducts(t *testing.T) {
+	products := []developerhub.Product{{Name: "A", Title: "Alpha"}, {Name: "B", Title: "Beta"}}
+	if got := filterProducts(products, ""); len(got) != 2 {
+		t.Fatalf("expected all products without a name filter, got %d", len(got))
+	}
+	got := filterProducts(products, "B")
+	if len(got) != 1 || got[0].Title.ValueString() != "Beta" {
+		t.Fatalf("expected only B, got %+v", got)
+	}
+}
+
+func TestFindRegisteredUser(t *testing.T) {
+	users := []developerhub.RegisteredUser{{UserID: "a"}, {UserID: "b", EmailID: "b@example.com"}}
+	if u, ok := findRegisteredUser(users, "b"); !ok || u.EmailID != "b@example.com" {
+		t.Fatalf("expected to find b, got %+v %v", u, ok)
+	}
+	if _, ok := findRegisteredUser(users, "missing"); ok {
+		t.Fatal("expected a missing user not to be found")
+	}
+}

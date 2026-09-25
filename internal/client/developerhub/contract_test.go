@@ -47,6 +47,7 @@ const testMetadata = `<?xml version="1.0" encoding="utf-8"?>
     <Property Name="version" Type="Edm.String"/>
     <Property Name="title" Type="Edm.String"/>
     <Property Name="description" Type="Edm.String"/>
+    <Property Name="shortText" Type="Edm.String"/>
     <Property Name="callbackurl" Type="Edm.String"/>
     <Property Name="developer_id" Type="Edm.String"/>
     <Property Name="app_key" Type="Edm.String"/>
@@ -59,10 +60,22 @@ const testMetadata = `<?xml version="1.0" encoding="utf-8"?>
     <Property Name="entityType" Type="Edm.String"/>
     <Property Name="entityId" Type="Edm.String"/>
    </EntityType>
+   <EntityType Name="APIProductsType">
+    <Key><PropertyRef Name="name"/></Key>
+    <Property Name="name" Type="Edm.String" Nullable="false"/>
+    <Property Name="title" Type="Edm.String"/>
+    <Property Name="version" Type="Edm.String"/>
+    <Property Name="vendor" Type="Edm.String"/>
+    <Property Name="description" Type="Edm.String"/>
+    <Property Name="shortText" Type="Edm.String"/>
+    <Property Name="published_at" Type="Edm.DateTime"/>
+    <Property Name="published_by" Type="Edm.String"/>
+   </EntityType>
    <EntityContainer Name="APIMgmt">
     <EntitySet Name="Applications" EntityType="developer.TestApplicationType"/>
     <EntitySet Name="Attributes" EntityType="developer.TestAttributeType"/>
     <EntitySet Name="Subscriptions" EntityType="developer.SubscriptionsType"/>
+    <EntitySet Name="APIProducts" EntityType="developer.APIProductsType"/>
    </EntityContainer>
   </Schema>
  </edmx:DataServices>
@@ -149,8 +162,9 @@ func TestGetServiceMetadata(t *testing.T) {
 func TestContract_CoversEveryWireField(t *testing.T) {
 	wireTypes := map[string][]any{
 		"Applications":  {Application{}},
-		"Attributes":    {Attribute{}},
+		"Attributes":    {Attribute{}, attributeValueUpdate{}},
 		"Subscriptions": {Subscription{}, subscriptionWriteRequest{}},
+		"APIProducts":   {Product{}},
 	}
 	for _, set := range Contract {
 		declared := map[string]bool{}

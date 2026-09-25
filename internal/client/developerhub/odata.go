@@ -9,16 +9,12 @@ import (
 
 // decodeEnvelope decodes a Developer Hub API JSON response into out.
 //
-// SAP's classic OData v1/v2 Gateway services wrap a response payload in a
-// top-level "d" property (a convention meant to defend against a
-// JavaScript array-constructor vulnerability in old browsers). Whether the
-// Developer Hub "/odata/1.0/data.svc/" endpoint does the same was not
-// independently confirmed during research (DESIGN.md §5/§13 — the SAP
-// documentation available showed only the request payload shapes, not a
-// full response example). decodeEnvelope therefore unwraps a "d" property
-// when present and falls back to decoding the body directly otherwise, so
-// either shape works without the caller needing to know which one SAP
-// actually returns.
+// The Developer Hub OData service wraps every response in a top-level "d"
+// property, and collections additionally in "d.results" - both confirmed by
+// the DevPortal_Application_CF specification (api-specs/). The plain-JSON
+// /api/1.0/ endpoints return unwrapped bodies. decodeEnvelope unwraps "d"
+// when present and decodes the body directly otherwise, so one decoder
+// serves both.
 func decodeEnvelope(body []byte, out any) error {
 	var wrapper struct {
 		D json.RawMessage `json:"d"`

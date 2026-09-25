@@ -14,7 +14,7 @@ func TestListApplicationAttributes_PlainArray(t *testing.T) {
 			t.Fatalf("expected path %q, got %q", expected, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[{"name":"env","value":"prod","entityType":"Applications","entityId":"app-1"}]`))
+		_, _ = w.Write([]byte(`[{"name":"env","value":"prod","entityId":"app-1"}]`))
 	})
 	defer server.Close()
 
@@ -30,7 +30,7 @@ func TestListApplicationAttributes_PlainArray(t *testing.T) {
 func TestListApplicationAttributes_ResultsEnvelope(t *testing.T) {
 	client, server := testDevPortalClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"results":[{"name":"env","value":"prod","entityType":"Applications","entityId":"app-1"}]}`))
+		_, _ = w.Write([]byte(`{"results":[{"name":"env","value":"prod","entityId":"app-1"}]}`))
 	})
 	defer server.Close()
 
@@ -56,8 +56,8 @@ func TestCreateApplicationAttribute(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decoding body: %v", err)
 		}
-		if body.EntityType != "Applications" || body.EntityID != "app-1" {
-			t.Fatalf("unexpected entity reference: %+v", body)
+		if body.Name != "env" || body.Value != "prod" || body.EntityID != "app-1" {
+			t.Fatalf("unexpected attribute body: %+v", body)
 		}
 		w.WriteHeader(http.StatusCreated)
 	})
@@ -69,13 +69,22 @@ func TestCreateApplicationAttribute(t *testing.T) {
 }
 
 func TestUpdateAndDeleteApplicationAttribute(t *testing.T) {
-	expectedPath := attributesPath + "(name='env',entityId='app-1',entityType='Applications')"
+	expectedPath := attributesPath + "(name='env',entityId='app-1',entityType='applications')"
 	var lastMethod string
 	client, server := testDevPortalClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != expectedPath {
 			t.Fatalf("expected path %q, got %q", expectedPath, r.URL.Path)
 		}
 		lastMethod = r.Method
+		if r.Method == http.MethodPut {
+			var body map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("decoding body: %v", err)
+			}
+			if len(body) != 1 || body["value"] != "staging" {
+				t.Fatalf("expected the specification's value-only update body, got %v", body)
+			}
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 	defer server.Close()

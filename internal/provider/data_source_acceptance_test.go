@@ -75,3 +75,35 @@ func TestAccProductSubscriptionsDataSource(t *testing.T) {
 		},
 	})
 }
+
+func TestAccProductsDataSource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "developerhub_products" "all" {}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.developerhub_products.all", "id", "products"),
+					resource.TestCheckResourceAttrSet("data.developerhub_products.all", "product.#"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccRegistrationRequestsDataSource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "developerhub_registration_requests" "pending" {}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.developerhub_registration_requests.pending", "id", "registration_requests"),
+					resource.TestCheckResourceAttrSet("data.developerhub_registration_requests.pending", "request.#"),
+				),
+			},
+		},
+	})
+}

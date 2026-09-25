@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/Prideth/terraform-provider-sap-developer-hub/internal/client/developerhub"
@@ -38,6 +41,7 @@ type applicationModel struct {
 	ID          types.String                `tfsdk:"id"`
 	Title       types.String                `tfsdk:"title"`
 	Description types.String                `tfsdk:"description"`
+	ShortText   types.String                `tfsdk:"short_text"`
 	CallbackURL types.String                `tfsdk:"callback_url"`
 	Version     types.String                `tfsdk:"version"`
 	DeveloperID types.String                `tfsdk:"developer_id"`
@@ -65,11 +69,18 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"title": schema.StringAttribute{
 				Required:    true,
-				Description: "The application's display title.",
+				Description: "The application's display title (at most 255 characters).",
+				Validators:  []validator.String{stringvalidator.LengthBetween(1, 255)},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "A description of the application.",
+				Description: "A description of the application (at most 2048 characters).",
+				Validators:  []validator.String{stringvalidator.LengthAtMost(2048)},
+			},
+			"short_text": schema.StringAttribute{
+				Optional:    true,
+				Description: "A short summary of the application (at most 255 characters).",
+				Validators:  []validator.String{stringvalidator.LengthAtMost(255)},
 			},
 			"callback_url": schema.StringAttribute{
 				Optional:    true,
@@ -111,17 +122,20 @@ func (r *applicationResource) Schema(_ context.Context, _ resource.SchemaRequest
 		Blocks: map[string]schema.Block{
 			"attribute": schema.ListNestedBlock{
 				Description: "A custom attribute on the application (\"APIMgmt.Attributes\" - see " +
-					"DESIGN.md §5/§6). Up to 18 are permitted, and each name is limited to 255 characters " +
-					"and each value to 1024 characters, per SAP's documented limits.",
+					"DESIGN.md §5/§6). Up to 18 are permitted; each name is limited to 235 characters " +
+					"and each value to 1024 characters, per SAP's specification.",
+				Validators: []validator.List{listvalidator.SizeAtMost(18)},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
 							Required:    true,
 							Description: "The attribute name. Cannot be changed once created; delete and re-add instead.",
+							Validators:  []validator.String{stringvalidator.LengthBetween(1, 235)},
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
 							Description: "The attribute value.",
+							Validators:  []validator.String{stringvalidator.LengthAtMost(1024)},
 						},
 					},
 				},
@@ -152,6 +166,7 @@ func (r *applicationResource) Create(ctx context.Context, req resource.CreateReq
 	created, err := r.client.CreateApplication(ctx, developerhub.Application{
 		Title:       plan.Title.ValueString(),
 		Description: plan.Description.ValueString(),
+		ShortText:   plan.ShortText.ValueString(),
 		CallbackURL: plan.CallbackURL.ValueString(),
 		DeveloperID: plan.DeveloperID.ValueString(),
 	})
@@ -211,8 +226,9 @@ func (r *applicationResource) Read(ctx context.Context, req resource.ReadRequest
 
 	state.Title = types.StringValue(app.Title)
 	state.Version = types.StringValue(app.Version)
-	state.Description = types.StringValue(app.Description)
-	state.CallbackURL = types.StringValue(app.CallbackURL)
+	state.Description = optionalString(state.Description, app.Description)
+	state.ShortText = optionalString(state.ShortText, app.ShortText)
+	state.CallbackURL = optionalString(state.CallbackURL, app.CallbackURL)
 	if app.DeveloperID != "" {
 		state.DeveloperID = types.StringValue(app.DeveloperID)
 	}
@@ -237,11 +253,13 @@ func (r *applicationResource) Update(ctx context.Context, req resource.UpdateReq
 
 	if plan.Title.ValueString() != state.Title.ValueString() ||
 		plan.Description.ValueString() != state.Description.ValueString() ||
+		plan.ShortText.ValueString() != state.ShortText.ValueString() ||
 		plan.CallbackURL.ValueString() != state.CallbackURL.ValueString() ||
 		plan.DeveloperID.ValueString() != state.DeveloperID.ValueString() {
 		err := r.client.UpdateApplication(ctx, state.ID.ValueString(), developerhub.Application{
 			Title:       plan.Title.ValueString(),
 			Description: plan.Description.ValueString(),
+			ShortText:   plan.ShortText.ValueString(),
 			CallbackURL: plan.CallbackURL.ValueString(),
 			DeveloperID: plan.DeveloperID.ValueString(),
 			Version:     state.Version.ValueString(),

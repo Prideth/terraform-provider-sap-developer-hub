@@ -18,6 +18,7 @@ data "developerhub_current_user" "me" {}
 resource "developerhub_application" "sales_app" {
   title        = "Sales Application"
   description  = "Used by the sales integration team"
+  short_text   = "Sales integration"
   callback_url = "https://sales.example.com/oauth/callback"
   developer_id = data.developerhub_current_user.me.name
 
@@ -38,14 +39,15 @@ resource "developerhub_application" "sales_app" {
 
 ### Required
 
-- `title` (String) The application's display title.
+- `title` (String) The application's display title (at most 255 characters).
 
 ### Optional
 
-- `attribute` (Block List) A custom attribute on the application ("APIMgmt.Attributes" - see DESIGN.md §5/§6). Up to 18 are permitted, and each name is limited to 255 characters and each value to 1024 characters, per SAP's documented limits. (see [below for nested schema](#nestedblock--attribute))
+- `attribute` (Block List) A custom attribute on the application ("APIMgmt.Attributes" - see DESIGN.md §5/§6). Up to 18 are permitted; each name is limited to 235 characters and each value to 1024 characters, per SAP's specification. (see [below for nested schema](#nestedblock--attribute))
 - `callback_url` (String) The OAuth callback/redirect URL for the application.
-- `description` (String) A description of the application.
+- `description` (String) A description of the application (at most 2048 characters).
 - `developer_id` (String) The Developer Hub developer id (registered user id) this application belongs to. Use the developerhub_current_user or developerhub_registered_users data source to look this up rather than copying it from the UI by hand.
+- `short_text` (String) A short summary of the application (at most 255 characters).
 
 ### Read-Only
 
