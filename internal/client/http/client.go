@@ -110,7 +110,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		}
 
 		if isWriteMethod(req.Method) && resp.StatusCode == http.StatusForbidden && requiresCSRFToken(resp) {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if err := c.refreshCSRFToken(ctx, req); err != nil {
 				return nil, err
 			}
@@ -126,7 +126,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		}
 
 		if resp.StatusCode == http.StatusUnauthorized && !invalidatedToken && c.invalidateToken != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			c.invalidateToken()
 			invalidatedToken = true
 			if err := rewindBody(req); err != nil {
@@ -141,7 +141,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 		if isRetryable(resp.StatusCode) && attempt < c.maxRetries {
 			retryAfter := retryAfterDelay(resp)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = fmt.Errorf("transient HTTP %d", resp.StatusCode)
 			if retryAfter > 0 {
 				if err := c.wait(ctx, attempt+1, nil, &retryAfter); err != nil {
@@ -257,6 +257,6 @@ func NewRequest(ctx context.Context, method, url string, body []byte) (*http.Req
 // ReadLimited reads resp.Body up to MaxResponseBytes, closing it, and
 // returns the bytes read.
 func ReadLimited(resp *http.Response) ([]byte, error) {
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	return io.ReadAll(io.LimitReader(resp.Body, MaxResponseBytes))
 }

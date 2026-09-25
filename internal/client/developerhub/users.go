@@ -26,7 +26,7 @@ func (c *Client) GetCurrentUser(ctx context.Context) (*CurrentUser, error) {
 		return nil, err
 	}
 	if len(users) == 0 {
-		return nil, fmt.Errorf("Developer Hub API returned no current user")
+		return nil, fmt.Errorf("developer hub API returned no current user")
 	}
 	return &users[0], nil
 }

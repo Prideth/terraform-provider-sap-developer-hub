@@ -33,7 +33,7 @@ func TestDo_RetriesOnServiceUnavailable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected eventual 200, got %d", resp.StatusCode)
@@ -71,7 +71,7 @@ func TestDo_HonorsRetryAfter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected eventual 200, got %d", resp.StatusCode)
 	}
@@ -92,7 +92,7 @@ func TestDo_DoesNotRetryOnNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("expected 404, got %d", resp.StatusCode)
 	}
@@ -125,7 +125,7 @@ func TestDo_InvalidatesTokenOnceOn401(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200 after token refresh, got %d", resp.StatusCode)
@@ -174,7 +174,7 @@ func TestDo_FetchesAndRetriesOnCSRFRequired(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("expected 201 after CSRF retry, got %d", resp.StatusCode)

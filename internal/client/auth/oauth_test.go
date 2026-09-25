@@ -61,7 +61,7 @@ func TestHTTPClient_CachesToken(t *testing.T) {
 		if err != nil {
 			t.Fatalf("request %d failed: %v", i, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	if got := tokenCalls.Load(); got != 1 {
@@ -89,14 +89,22 @@ func TestHTTPClient_InvalidateForcesRefetch(t *testing.T) {
 	}
 
 	req, _ := http.NewRequest(http.MethodGet, apiServer.URL, nil)
-	_, _ = client.Transport.RoundTrip(req)
+	resp, err := client.Transport.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("RoundTrip: %v", err)
+	}
+	_ = resp.Body.Close()
 	if got := tokenCalls.Load(); got != 1 {
 		t.Fatalf("expected 1 token fetch, got %d", got)
 	}
 
 	invalidate()
 
-	_, _ = client.Transport.RoundTrip(req)
+	resp, err = client.Transport.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("RoundTrip: %v", err)
+	}
+	_ = resp.Body.Close()
 	if got := tokenCalls.Load(); got != 2 {
 		t.Fatalf("expected invalidate() to force a second token fetch, got %d", got)
 	}

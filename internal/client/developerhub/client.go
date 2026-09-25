@@ -64,6 +64,7 @@ func (c *Client) send(ctx context.Context, method, path string, body any, out an
 	if err != nil {
 		return fmt.Errorf("calling Developer Hub API: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := sapthttp.ReadLimited(resp)
 	if err != nil {

@@ -42,9 +42,13 @@ func requiresCSRFToken(resp *http.Response) bool {
 }
 
 // refreshCSRFToken issues a GET against the same URL as req with
-// "X-CSRF-Token: fetch" and caches the token and cookies returned.
+// "X-CSRF-Token: fetch" and caches the token and cookies returned. req.URL
+// is not attacker-controlled: it is always a URL this same Client just
+// built from its own configured base URL and a hardcoded API path (see
+// developerhub.Client.url), never a redirect target or externally supplied
+// value, so re-requesting it here is not an SSRF risk.
 func (c *Client) refreshCSRFToken(ctx context.Context, req *http.Request) error {
-	fetchReq, err := http.NewRequestWithContext(ctx, http.MethodGet, req.URL.String(), nil)
+	fetchReq, err := http.NewRequestWithContext(ctx, http.MethodGet, req.URL.String(), nil) //nolint:gosec // see comment above
 	if err != nil {
 		return err
 	}
@@ -55,7 +59,7 @@ func (c *Client) refreshCSRFToken(ctx context.Context, req *http.Request) error 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	token := resp.Header.Get("X-CSRF-Token")
 	cookie := resp.Header.Get("Set-Cookie")

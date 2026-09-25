@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -189,9 +188,4 @@ func dataFromProviderData(raw any, diags *diag.Diagnostics) (*Data, bool) {
 		return nil, false
 	}
 	return data, true
-}
-
-// pathRoot is a small convenience wrapper used by ImportState implementations.
-func pathRoot(name string) path.Path {
-	return path.Root(name)
 }

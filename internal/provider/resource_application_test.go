@@ -55,12 +55,12 @@ func TestReconcileAttributes_IssuesMinimalCalls(t *testing.T) {
 
 	var sawCreateAdded, sawUpdateChanged, sawDeleteRemoved bool
 	for _, c := range calls {
-		switch {
-		case c == "POST "+applicationsPath+"('app-1')/ToAttributes":
+		switch c {
+		case "POST " + applicationsPath + "('app-1')/ToAttributes":
 			sawCreateAdded = true
-		case c == "PUT "+attributesPath+"(name='changed',entityId='app-1',entityType='Applications')":
+		case "PUT " + attributesPath + "(name='changed',entityId='app-1',entityType='Applications')":
 			sawUpdateChanged = true
-		case c == "DELETE "+attributesPath+"(name='removed',entityId='app-1',entityType='Applications')":
+		case "DELETE " + attributesPath + "(name='removed',entityId='app-1',entityType='Applications')":
 			sawDeleteRemoved = true
 		}
 	}

@@ -59,7 +59,7 @@ REST API, so they are not implemented rather than built against a guess.
 ## Requirements
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.5
-- Go >= 1.24 (for building the provider from source)
+- Go >= 1.26 (for building the provider from source; see `go.mod`)
 - A reachable Developer Hub with a `devportal-apiaccess` service instance
   and service key (see [Authentication](#authentication))
 
