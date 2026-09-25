@@ -19,7 +19,12 @@ list for whoever picks this up next, in order:
 5. **Centralized Developer Hub connections**, if a public write API
    surfaces - with mandatory irreversibility warnings in the resource docs
    (`DESIGN.md` §10) and no forced recreation.
-6. **Rate plans** (`APIMgmt.RatePlans`), if SAP Monetization support is
+6. **Read-only product catalog data source** (`APIMgmt.APIProducts`) — the
+   entity set is confirmed to exist in the Developer Hub service
+   (`DESIGN.md` §20), which would let `product_name` be looked up instead of
+   hard-coded. Its property names are not documented for this service, so
+   it waits for the `$metadata` check or the `DevPortal_Application_CF` spec.
+7. **Rate plans** (`APIMgmt.RatePlans`), if SAP Monetization support is
    ever in scope for this provider - the entity and its navigation
    property are already confirmed to exist (`DESIGN.md` §9/§12).
 
