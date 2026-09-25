@@ -5,9 +5,9 @@ citations for every "verified" claim.
 
 | Feature | Resource | Data Source | Import | Status |
 |---|---|---|---|---|
-| Applications | `developerhub_application` | – | yes | supported |
+| Applications | `developerhub_application` | `developerhub_applications` | yes | supported |
 | Application custom attributes | nested in `developerhub_application` | – | via parent | supported |
-| Product subscriptions | `developerhub_product_subscription` | – | yes | supported (verified create/read/update; delete inferred by analogy, see `DESIGN.md` §9) |
+| Product subscriptions | `developerhub_product_subscription` | `developerhub_product_subscriptions` | yes | supported (verified create/read/update; delete inferred by analogy, see `DESIGN.md` §9) |
 | Current user / developer identity | – | `developerhub_current_user` | n/a | supported |
 | Registered developers | – | `developerhub_registered_users` | n/a | supported |
 | Bulk user registration (admin) | – | – | – | SAP API unavailable to verify (`DevPortal_RegisteringUsers_CF` exists but schema unconfirmed) |

@@ -78,3 +78,11 @@ func (c *Client) DeleteApplication(ctx context.Context, id string) error {
 	path := fmt.Sprintf("%s(%s)", applicationsPath, odataKey(id))
 	return c.delete(ctx, path)
 }
+
+// ListApplications reads every application via
+// "GET .../APIMgmt.Applications", documented in
+// create-or-update-or-read-an-application-using-subscription-key-e2645b5.md.
+// Per that document the collection read does not return app_key/app_secret.
+func (c *Client) ListApplications(ctx context.Context) ([]Application, error) {
+	return listAll[Application](ctx, c, applicationsPath)
+}

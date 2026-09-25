@@ -15,6 +15,13 @@
 - `developerhub_current_user` and `developerhub_registered_users` data
   sources, so a `developer_id` never needs to be copied from the Developer
   Hub UI by hand.
+- `developerhub_applications` and `developerhub_product_subscriptions` data
+  sources, listing applications and subscriptions (including ones created
+  in the Developer Hub UI) with optional filters.
+- Server-side pagination (`__next`) for every collection read, refusing
+  paging links that point to a different host.
+- `make verify-api`: checks the provider against the live tenant's OData
+  `$metadata` and `/api/1.0/` endpoints.
 - `DESIGN.md`, documenting the full scope boundary with
   `terraform-provider-integration-suite` and the SAP BTP provider, the API
   research behind every implemented (and deliberately not implemented)

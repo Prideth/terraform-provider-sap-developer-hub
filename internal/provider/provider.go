@@ -151,6 +151,8 @@ func (p *developerHubProvider) DataSources(_ context.Context) []func() datasourc
 	return []func() datasource.DataSource{
 		NewCurrentUserDataSource,
 		NewRegisteredUsersDataSource,
+		NewApplicationsDataSource,
+		NewProductSubscriptionsDataSource,
 	}
 }
 

@@ -190,6 +190,8 @@ silently dropped.
 | Terraform type | Backing API | Notes |
 |---|---|---|
 | `developerhub_current_user` | `GET /api/1.0/user` | Returns the identity of the credentials used to authenticate — useful to discover your own `developer_id` for `developerhub_application.developer_id`, exactly as the SAP doc describes obtaining it (§4/§11). |
+| `developerhub_applications` | `GET /odata/1.0/data.svc/APIMgmt.Applications` (all pages) | Lists applications, optionally narrowed by `developer_id` (filtered client-side, so no OData `$filter` syntax is assumed). SAP's collection read does not return `app_key`/`app_secret`, so neither does this data source. |
+| `developerhub_product_subscriptions` | `GET /odata/1.0/data.svc/APIMgmt.Subscriptions` (all pages) | Lists subscriptions with their status, optionally narrowed by `application_id` and/or `product_name` (client-side). Shows subscriptions developers created in the UI, which Terraform does not manage. |
 | `developerhub_registered_users` | `GET /api/1.0/registrations?type=registered` | Lists registered Developer Hub developers and their `userId` (== `developer_id`), so a Product Subscription/Application configuration never needs an internal ID copied by hand from the UI. |
 
 ## 8. Terraform IDs
@@ -362,7 +364,19 @@ SAP API returned HTTP 409, code "...":
 
 Never the raw HTML/JSON body, never a token or header value.
 
-## 15. Retry Strategy
+## 15. Retry Strategy and Pagination
+
+### Pagination
+
+OData v2 services may page collections server-side, returning a `__next`
+link with each page. `listAll` (`internal/client/developerhub/odata.go`)
+follows it for every collection read (applications, subscriptions,
+attributes), whether the link is absolute or relative. Because every
+request carries the bearer token, a `__next` link to any host other than
+the configured Developer Hub URL is refused, never followed, and the loop
+stops with an error after 1000 pages rather than running forever.
+
+### Retry
 
 Copied near-verbatim from `terraform-provider-integration-suite`'s
 `internal/client/http`: exponential backoff with full jitter on `429`,

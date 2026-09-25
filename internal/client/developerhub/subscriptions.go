@@ -111,3 +111,10 @@ func (c *Client) DeleteSubscription(ctx context.Context, id string) error {
 	path := subscriptionsPath + "(" + odataKey(id) + ")"
 	return c.delete(ctx, path)
 }
+
+// ListSubscriptions reads every subscription via
+// "GET .../APIMgmt.Subscriptions", the entity set that same document
+// describes reading ("one read call on Subscription's entity").
+func (c *Client) ListSubscriptions(ctx context.Context) ([]Subscription, error) {
+	return listAll[Subscription](ctx, c, subscriptionsPath)
+}

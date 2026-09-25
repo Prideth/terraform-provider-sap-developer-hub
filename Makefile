@@ -16,7 +16,7 @@ acceptance-test:
 # Checks every entity set and field the provider uses against the live
 # tenant's OData $metadata and /api/1.0/ endpoints. Needs SAP_DEVELOPER_HUB_*.
 verify-api:
-	TF_ACC=1 go test -v -timeout 10m -run 'TestAccServiceContract|TestAccCurrentUserDataSource|TestAccRegisteredUsersDataSource' ./...
+	TF_ACC=1 go test -v -timeout 10m -run 'TestAccServiceContract|TestAcc.*DataSource' ./...
 
 fmt:
 	gofmt -w .

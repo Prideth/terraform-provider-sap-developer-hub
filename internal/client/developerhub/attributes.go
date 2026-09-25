@@ -21,11 +21,7 @@ type Attribute struct {
 // via its ToAttributes navigation property.
 func (c *Client) ListApplicationAttributes(ctx context.Context, applicationID string) ([]Attribute, error) {
 	path := fmt.Sprintf("%s(%s)/ToAttributes", applicationsPath, odataKey(applicationID))
-	var collection odataCollection[Attribute]
-	if err := c.get(ctx, path, &collection); err != nil {
-		return nil, err
-	}
-	return collection.Items, nil
+	return listAll[Attribute](ctx, c, path)
 }
 
 // CreateApplicationAttribute adds a custom attribute to an application, via

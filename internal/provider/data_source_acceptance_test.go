@@ -43,3 +43,35 @@ func TestAccRegisteredUsersDataSource(t *testing.T) {
 		},
 	})
 }
+
+func TestAccApplicationsDataSource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "developerhub_applications" "all" {}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.developerhub_applications.all", "id", "applications"),
+					resource.TestCheckResourceAttrSet("data.developerhub_applications.all", "application.#"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProductSubscriptionsDataSource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "developerhub_product_subscriptions" "all" {}`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.developerhub_product_subscriptions.all", "id", "product_subscriptions"),
+					resource.TestCheckResourceAttrSet("data.developerhub_product_subscriptions.all", "subscription.#"),
+				),
+			},
+		},
+	})
+}
