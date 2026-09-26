@@ -109,3 +109,33 @@ func TestHTTPClient_InvalidateForcesRefetch(t *testing.T) {
 		t.Fatalf("expected invalidate() to force a second token fetch, got %d", got)
 	}
 }
+
+func TestHTTPClient_OutlivesTheConfigureContext(t *testing.T) {
+	var tokenCalls atomic.Int32
+	tokenServer := newTokenServer(t, &tokenCalls)
+	defer tokenServer.Close()
+
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer apiServer.Close()
+
+	// Terraform cancels the ConfigureProvider context as soon as
+	// configuration is done, before any resource triggers a token fetch.
+	ctx, cancel := context.WithCancel(context.Background())
+	cfg := Config{TokenURL: tokenServer.URL + "/oauth/token", ClientID: "id", ClientSecret: "secret"}
+	client, _, err := cfg.HTTPClient(ctx, http.DefaultClient)
+	if err != nil {
+		t.Fatalf("HTTPClient: %v", err)
+	}
+	cancel()
+
+	resp, err := client.Get(apiServer.URL)
+	if err != nil {
+		t.Fatalf("request after the configure context was cancelled: %v", err)
+	}
+	_ = resp.Body.Close()
+	if got := tokenCalls.Load(); got != 1 {
+		t.Fatalf("expected 1 token fetch, got %d", got)
+	}
+}

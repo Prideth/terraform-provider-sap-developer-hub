@@ -10,12 +10,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
 	"net/http"
 	"strconv"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -102,6 +105,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 		resp, err := c.doer.Do(req)
 		if err != nil {
+			if rejected := credentialsRejected(err); rejected != nil {
+				return nil, rejected
+			}
 			lastErr = err
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
@@ -259,4 +265,22 @@ func NewRequest(ctx context.Context, method, url string, body []byte) (*http.Req
 func ReadLimited(resp *http.Response) ([]byte, error) {
 	defer func() { _ = resp.Body.Close() }()
 	return io.ReadAll(io.LimitReader(resp.Body, MaxResponseBytes))
+}
+
+// credentialsRejected turns a token endpoint's 4xx answer into a final
+// error. Retrying cannot fix client credentials the identity service has
+// rejected, so it is reported at once, naming the provider settings to
+// check. Any other error returns nil and is retried as a transient failure.
+func credentialsRejected(err error) error {
+	var retrieveErr *oauth2.RetrieveError
+	if !errors.As(err, &retrieveErr) || retrieveErr.Response == nil {
+		return nil
+	}
+	status := retrieveErr.Response.StatusCode
+	if status < 400 || status >= 500 || status == http.StatusTooManyRequests {
+		return nil
+	}
+	return fmt.Errorf("the OAuth token endpoint rejected the client credentials (HTTP %d); check that "+
+		"token_url, client_id and client_secret are copied unchanged from one \"devportal-apiaccess\" "+
+		"service key: %w", status, retrieveErr)
 }

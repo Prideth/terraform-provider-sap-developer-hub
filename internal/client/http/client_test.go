@@ -2,11 +2,16 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 func testClient(doer Doer) *Client {
@@ -184,5 +189,61 @@ func TestDo_FetchesAndRetriesOnCSRFRequired(t *testing.T) {
 	}
 	if writeCalls.Load() != 2 {
 		t.Fatalf("expected exactly 2 write attempts, got %d", writeCalls.Load())
+	}
+}
+
+type doerFunc func(req *http.Request) (*http.Response, error)
+
+func (f doerFunc) Do(req *http.Request) (*http.Response, error) { return f(req) }
+
+func TestDo_DoesNotRetryRejectedClientCredentials(t *testing.T) {
+	// What an *http.Client with an oauth2.Transport returns when the token
+	// endpoint answers 401, as SAP's identity service does for a wrong
+	// client_id or client_secret.
+	rejection := &oauth2.RetrieveError{
+		Response:         &http.Response{StatusCode: http.StatusUnauthorized},
+		ErrorCode:        "unauthorized",
+		ErrorDescription: "An Authentication object was not found in the SecurityContext",
+	}
+	var calls atomic.Int32
+	c := testClient(doerFunc(func(req *http.Request) (*http.Response, error) {
+		calls.Add(1)
+		return nil, &url.Error{Op: "Get", URL: req.URL.String(), Err: rejection}
+	}))
+	req, _ := NewRequest(context.Background(), http.MethodGet, "https://devhub.example.com/api/1.0/user", nil)
+
+	resp, err := c.Do(context.Background(), req)
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	if !errors.Is(err, rejection) {
+		t.Fatalf("expected the token endpoint's error to be wrapped, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "rejected the client credentials") {
+		t.Fatalf("expected a message naming the credentials, got %v", err)
+	}
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("expected rejected credentials not to be retried, got %d attempts", got)
+	}
+}
+
+func TestDo_RetriesTokenEndpointOutage(t *testing.T) {
+	outage := &oauth2.RetrieveError{Response: &http.Response{StatusCode: http.StatusServiceUnavailable}}
+	var calls atomic.Int32
+	c := testClient(doerFunc(func(req *http.Request) (*http.Response, error) {
+		if calls.Add(1) < 2 {
+			return nil, &url.Error{Op: "Get", URL: req.URL.String(), Err: outage}
+		}
+		return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+	}))
+	req, _ := NewRequest(context.Background(), http.MethodGet, "https://devhub.example.com/api/1.0/user", nil)
+
+	resp, err := c.Do(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Do: %v", err)
+	}
+	_ = resp.Body.Close()
+	if got := calls.Load(); got != 2 {
+		t.Fatalf("expected a 503 from the token endpoint to be retried, got %d attempts", got)
 	}
 }

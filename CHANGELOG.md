@@ -44,3 +44,9 @@
 - An unauthenticated call, which the Developer Hub answers with an HTML
   login page rather than a 401, now fails with a clear message about the
   provider credentials instead of a JSON parse error.
+- Access tokens are fetched correctly after provider configuration; every
+  API call used to fail with "context canceled" because the token request
+  was tied to the already-finished configure step.
+- Client credentials rejected by the token endpoint fail at once with a
+  message naming the provider settings to check, instead of being retried
+  five times.

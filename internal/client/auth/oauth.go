@@ -66,7 +66,11 @@ func (c Config) HTTPClient(ctx context.Context, base *http.Client) (*http.Client
 		AuthStyle:    oauth2.AuthStyleInHeader,
 	}
 
-	baseCtx := context.WithValue(ctx, oauth2.HTTPClient, base)
+	// Token fetches happen lazily, long after HTTPClient returns: Terraform
+	// cancels the context it passes to ConfigureProvider once configuration
+	// is done, so the token requests keep its values but not its
+	// cancellation.
+	baseCtx := context.WithValue(context.WithoutCancel(ctx), oauth2.HTTPClient, base)
 	source := &invalidatableTokenSource{
 		fetch: func() (*oauth2.Token, error) {
 			return ccConfig.Token(baseCtx)
