@@ -41,3 +41,6 @@
   `'applications'` entity type key and value-only update bodies.
 - Optional application fields that are not configured no longer produce a
   diff after every apply.
+- An unauthenticated call, which the Developer Hub answers with an HTML
+  login page rather than a 401, now fails with a clear message about the
+  provider credentials instead of a JSON parse error.

@@ -139,3 +139,21 @@ func TestDeleteApplication_AlreadyGoneIsNotFound(t *testing.T) {
 		t.Fatalf("expected a not-found *apierror.Error, got %v", err)
 	}
 }
+
+func TestGetApplication_LoginPageIsAClearError(t *testing.T) {
+	// What the Developer Hub's application router answers to a request
+	// without a valid token: HTTP 200 with an HTML login redirect.
+	client, server := testDevPortalClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<html><head><script>location="https://example.authentication.eu10.hana.ondemand.com/oauth/authorize"</script></head></html>`))
+	})
+	defer server.Close()
+
+	_, err := client.GetApplication(context.Background(), "app-1")
+	if !errors.Is(err, errLoginPage) {
+		t.Fatalf("expected errLoginPage, got %v", err)
+	}
+	if _, err := client.GetServiceMetadata(context.Background()); !errors.Is(err, errLoginPage) {
+		t.Fatalf("expected errLoginPage from $metadata too, got %v", err)
+	}
+}

@@ -364,6 +364,13 @@ SAP API returned HTTP 409, code "...":
 
 Never the raw HTML/JSON body, never a token or header value.
 
+An unauthenticated request does not get a 401: the Developer Hub's
+application router answers it with HTTP 200 and an HTML page that redirects
+to the browser login (observed on a live tenant, 2026-09-26). The client
+treats any `text/html` response as that case and reports that the request
+was not authenticated and which provider settings to check, instead of
+surfacing a JSON or XML parse error.
+
 ## 15. Retry Strategy and Pagination
 
 ### Pagination
@@ -491,6 +498,6 @@ version of each of these sources, in this order of authority:
 | `help.sap.com` | mirror commit `33f3395`, 2026-09-18 — re-checked 2026-09-25 with direct network access | **Verified.** The live site is a single-page app whose page code loads each topic's history from SAP's GitHub documentation repositories, so the `SAP-docs/btp-integration-suite` mirror at its newest commit *is* the current `help.sap.com` content. Every endpoint and field in `Contract` traces to a quoted payload or EDMX in this revision (§5, §9). The API Management "What's New" list (`what-s-new-for-sap-api-management-cloud-foundry-d9d60be.md`, 4 329 lines) was reviewed in full for Developer Hub entries: it announces UI features only (MCP server subscriptions, product permissions, AsyncAPI re-upload, external OAuth products, centralized Developer Hub certificate monitoring) and no new public Developer Hub REST API, which matches §5 and §12. |
 | `api.sap.com` specs | `DevPortal_Application_CF` 1.0, `DevPortal_RegisteringUsers_CF` 1.0, `DevPortal_ExternalGovernance_CF` 1.0.0, `DevPortal_ExternalGovernanceSPI_CF` 1.0.0 — downloaded 2026-09-26, kept in `api-specs/` | **Verified.** Downloads require an interactive SAP Universal ID sign-in, so the files were downloaded in a browser and committed. Findings: the OData service wraps responses in `d` / `d.results` (as `decodeEnvelope` expects); every Application, Subscription and product field in `Contract` exists; three attribute details differ from the older Help Portal sample and now follow the spec (§5); the registration API is fully specified and is now implemented (`developerhub_developer`, `developerhub_registration_requests`); the product type is fully specified and is now implemented (`developerhub_products`). The application spec covers only get-one, create and the attribute operations: application update, delete and collection read, and all `APIMgmt.Subscriptions` operations, remain sourced from the Help Portal (§5, §9). The external governance specs contain only the decision and deletion-confirmation callbacks (§5). |
 | community.sap.com (corroborating, lower authority) | SAP-authored posts: "Exploring API Portal and API Business Hub Enterprise APIs" (2022), "Governance in Developer Hub" parts 1-3 (2025-12-17) | **Consistent with §5.** Confirms `/odata/1.0/data.svc/$metadata` as the way to discover the service contract, the placeholder `id` on create, `developer_id` being optional, and that the service exposes the entity sets `APIMgmt.Applications`, `APIMgmt.APIProducts`, `APIMgmt.APIResources`, `APIMgmt.ProxyEndPoints`, `APIMgmt.APIProxies`, `APIMgmt.APIResourceDocumentations`, `APIMgmt.RatePlans`, `APIMgmt.Subscriptions`, `APIMgmt.Attributes`, `CatalogResources`, `Comments`, `Ratings`. Governance settings are confirmed UI-only; the External Governance API's two resources are named (see §5). |
-| Live Developer Hub `$metadata` and `/api/1.0/` | – | **Not yet run.** No tenant credentials in the development environment. Run `make verify-api` with `SAP_DEVELOPER_HUB_*` set; the weekly acceptance workflow does the same once the repository secrets are configured. |
+| Live Developer Hub `$metadata` and `/api/1.0/` | tenant on `cfapps.eu10-003` reachable since 2026-09-26 | **Not yet run.** The host answers; without credentials every call returns the login redirect described in §14. No tenant credentials in the development environment. Run `make verify-api` with `SAP_DEVELOPER_HUB_*` set; the weekly acceptance workflow does the same once the repository secrets are configured. |
 
 Update this table whenever any of the three is checked again.

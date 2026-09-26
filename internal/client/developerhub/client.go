@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -74,6 +75,9 @@ func (c *Client) send(ctx context.Context, method, path string, body any, out an
 	if resp.StatusCode >= 400 {
 		return parseError(resp.StatusCode, respBody)
 	}
+	if isLoginPage(resp.Header.Get("Content-Type")) {
+		return errLoginPage
+	}
 
 	if out == nil || len(bytes.TrimSpace(respBody)) == 0 {
 		return nil
@@ -107,6 +111,9 @@ func (c *Client) getXML(ctx context.Context, path string) ([]byte, error) {
 	if resp.StatusCode >= 400 {
 		return nil, parseError(resp.StatusCode, body)
 	}
+	if isLoginPage(resp.Header.Get("Content-Type")) {
+		return nil, errLoginPage
+	}
 	return body, nil
 }
 
@@ -124,6 +131,19 @@ func (c *Client) put(ctx context.Context, path string, body any) error {
 
 func (c *Client) delete(ctx context.Context, path string) error {
 	return c.send(ctx, http.MethodDelete, path, nil, nil)
+}
+
+// errLoginPage is returned when the Developer Hub answers an API call with an
+// HTML page. Its application router does that - with HTTP 200 - for every
+// request that carries no valid bearer token, redirecting to the browser
+// login instead of returning 401, so without this check the caller would only
+// see a JSON or XML parse error.
+var errLoginPage = errors.New("the Developer Hub returned an HTML login page instead of an API response: " +
+	"the request was not authenticated. Check that token_url, client_id and client_secret come from a " +
+	"\"devportal-apiaccess\" service key and that url is that service key's \"url\"")
+
+func isLoginPage(contentType string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(contentType)), "text/html")
 }
 
 // odataKey renders a single-quoted OData string key, escaping embedded
